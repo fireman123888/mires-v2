@@ -92,54 +92,56 @@ export function ImagePlayground({
           suggestions={suggestions}
           externalPrompt={externalPrompt}
         />
-        <>
-          {(() => {
-            const getModelProps = () =>
-              (Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
-                const provider = PROVIDERS[key];
-                const imageItem = images.find((img) => img.provider === key);
-                const imageData = imageItem?.image;
-                const modelId = imageItem?.modelId ?? "N/A";
-                const timing = timings[key];
+        {(isLoading || images.length > 0) && (
+          <>
+            {(() => {
+              const getModelProps = () =>
+                (Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
+                  const provider = PROVIDERS[key];
+                  const imageItem = images.find((img) => img.provider === key);
+                  const imageData = imageItem?.image;
+                  const modelId = imageItem?.modelId ?? "N/A";
+                  const timing = timings[key];
 
-                return {
-                  label: provider.displayName,
-                  models: provider.models,
-                  value: selectedModels[key],
-                  providerKey: key,
-                  onChange: (model: string, providerKey: ProviderKey) =>
-                    handleModelChange(providerKey, model),
-                  iconPath: provider.iconPath,
-                  color: provider.color,
-                  enabled: enabledProviders[key],
-                  onToggle: (enabled: boolean) =>
-                    handleProviderToggle(key, enabled),
-                  image: imageData,
-                  modelId,
-                  timing,
-                  failed: failedProviders.includes(key),
-                };
-              });
+                  return {
+                    label: provider.displayName,
+                    models: provider.models,
+                    value: selectedModels[key],
+                    providerKey: key,
+                    onChange: (model: string, providerKey: ProviderKey) =>
+                      handleModelChange(providerKey, model),
+                    iconPath: provider.iconPath,
+                    color: provider.color,
+                    enabled: enabledProviders[key],
+                    onToggle: (enabled: boolean) =>
+                      handleProviderToggle(key, enabled),
+                    image: imageData,
+                    modelId,
+                    timing,
+                    failed: failedProviders.includes(key),
+                  };
+                });
 
-            return (
-              <>
-                <div className="md:hidden">
-                  <ModelCardCarousel models={getModelProps()} />
-                </div>
-                <div className="hidden md:grid md:grid-cols-2 2xl:grid-cols-4 gap-8">
-                  {getModelProps().map((props) => (
-                    <ModelSelect key={props.label} {...props} />
-                  ))}
-                </div>
-                {activePrompt && activePrompt.length > 0 && (
-                  <div className="text-center mt-4 text-muted-foreground">
-                    {activePrompt}
+              return (
+                <>
+                  <div className="md:hidden">
+                    <ModelCardCarousel models={getModelProps()} />
                   </div>
-                )}
-              </>
-            );
-          })()}
-        </>
+                  <div className="hidden md:grid md:grid-cols-2 2xl:grid-cols-4 gap-8">
+                    {getModelProps().map((props) => (
+                      <ModelSelect key={props.label} {...props} />
+                    ))}
+                  </div>
+                  {activePrompt && activePrompt.length > 0 && (
+                    <div className="text-center mt-4 text-muted-foreground">
+                      {activePrompt}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </>
+        )}
         <Gallery onUsePrompt={(p) => setExternalPrompt(p)} />
       </div>
     </div>
