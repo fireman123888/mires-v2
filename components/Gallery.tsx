@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/I18nProvider";
+
 // 12 curated examples — images pre-generated and served as static files
 // from /public/gallery/ via Vercel CDN for stability and speed.
 // Re-generate with: node scripts/fetch-gallery.mjs
@@ -23,6 +25,7 @@ interface GalleryProps {
 }
 
 export function Gallery({ onUsePrompt }: GalleryProps) {
+  const { t } = useT();
   const handleClick = (prompt: string) => {
     onUsePrompt(prompt);
     // Smooth scroll to the prompt input
@@ -34,10 +37,10 @@ export function Gallery({ onUsePrompt }: GalleryProps) {
     <section className="mt-16 mb-8">
       <div className="text-center mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          获取灵感
+          {t("gallery.title")}
         </h2>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-          发现新内容 · 点击任一示例直接使用其提示词
+          {t("gallery.subtitle")}
         </p>
       </div>
 
@@ -64,7 +67,7 @@ export function Gallery({ onUsePrompt }: GalleryProps) {
                 onClick={() => handleClick(ex.prompt)}
                 className="w-full text-sm font-semibold py-2 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
               >
-                点击使用
+                {t("gallery.usePrompt")}
               </button>
             </div>
           </div>

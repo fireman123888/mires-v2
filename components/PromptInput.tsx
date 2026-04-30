@@ -4,6 +4,7 @@ import { getRandomSuggestions, Suggestion } from "@/lib/suggestions";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/I18nProvider";
 
 type QualityMode = "performance" | "quality";
 
@@ -26,6 +27,7 @@ export function PromptInput({
 }: PromptInputProps) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
+  const { t } = useT();
 
   // External prompt injection from Gallery card click
   if (externalPrompt && externalPrompt !== input) {
@@ -67,7 +69,7 @@ export function PromptInput({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入提示词，建议英文效果最佳..."
+            placeholder={t("prompt.placeholder")}
             rows={3}
             className="text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />

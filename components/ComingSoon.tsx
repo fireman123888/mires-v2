@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { Header } from "./Header";
+import { useT } from "@/components/I18nProvider";
 
 interface ComingSoonProps {
   title: string;
@@ -9,6 +12,7 @@ interface ComingSoonProps {
 }
 
 export function ComingSoon({ title, description, emoji = "✨" }: ComingSoonProps) {
+  const { t } = useT();
   return (
     <div className="min-h-screen bg-background py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -34,7 +38,7 @@ export function ComingSoon({ title, description, emoji = "✨" }: ComingSoonProp
 
           <div className="mt-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary text-sm font-medium ring-1 ring-primary/20">
             <Sparkles className="w-4 h-4 text-primary" />
-            敬请期待
+            {t("comingSoon.tag")}
           </div>
 
           <div className="mt-10">
@@ -43,7 +47,7 @@ export function ComingSoon({ title, description, emoji = "✨" }: ComingSoonProp
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              返回首页继续生成图像
+              {t("comingSoon.back")}
             </Link>
           </div>
         </div>

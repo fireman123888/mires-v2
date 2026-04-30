@@ -1,12 +1,14 @@
-import { ComingSoon } from "@/components/ComingSoon";
+"use client";
 
-export const metadata = { title: "AI 图像编辑器 — Mires" };
+import { ComingSoon } from "@/components/ComingSoon";
+import { useT } from "@/components/I18nProvider";
 
 export default function Page() {
+  const { t } = useT();
   return (
     <ComingSoon
-      title="AI 图像编辑器"
-      description="上传图片，用自然语言指令精准编辑：换背景、改光线、加元素、改风格。功能正在开发中。"
+      title={t("comingSoon.editor.title")}
+      description={t("comingSoon.editor.description")}
       emoji="🎨"
     />
   );

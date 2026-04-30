@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/I18nProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const Logo = ({ size = 30 }: { size?: number }) => (
   <svg
@@ -21,16 +23,17 @@ const Logo = ({ size = 30 }: { size?: number }) => (
   </svg>
 );
 
-const NAV_ITEMS = [
-  { href: "/editor", label: "AI 图像编辑器" },
-  { href: "/video", label: "AI 视频生成器" },
-  { href: "/pricing", label: "定价" },
-  { href: "/tools", label: "AI 工具页面" },
-];
-
 export const Header = () => {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useT();
+
+  const NAV_ITEMS = [
+    { href: "/editor", label: t("nav.editor") },
+    { href: "/video", label: t("nav.video") },
+    { href: "/pricing", label: t("nav.pricing") },
+    { href: "/tools", label: t("nav.tools") },
+  ];
 
   return (
     <header className="mb-6 relative z-20">
@@ -64,12 +67,14 @@ export const Header = () => {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-3 text-sm shrink-0">
+        <div className="flex items-center gap-2 text-sm shrink-0">
+          <LanguageSwitcher />
+
           <Link
             href="https://github.com/fireman123888/mires-v2"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline text-muted-foreground hover:text-foreground transition-colors"
+            className="hidden sm:inline text-muted-foreground hover:text-foreground transition-colors px-2"
           >
             GitHub
           </Link>

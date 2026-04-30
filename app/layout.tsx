@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { I18nProvider } from "@/components/I18nProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={`${geistSans.variable} ${geistMono.variable} dark`}>
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <I18nProvider>{children}</I18nProvider>
         <Analytics />
       </body>
     </html>

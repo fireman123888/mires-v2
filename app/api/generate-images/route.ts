@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateImageRequest } from "@/lib/api-types";
 
@@ -19,7 +20,7 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMillis: number): Promise<T> 
   ]);
 };
 
-async function callPollinations(prompt: string, modelId: string, seed: number): Promise<string> {
+async function callPollinations(prompt: string, modelId: string, seed: number): Promise<Buffer> {
   const url = new URL(`${POLLINATIONS_BASE}/prompt/${encodeURIComponent(prompt)}`);
   url.searchParams.set("width", String(DEFAULT_WIDTH));
   url.searchParams.set("height", String(DEFAULT_HEIGHT));
@@ -40,11 +41,57 @@ async function callPollinations(prompt: string, modelId: string, seed: number): 
   if (!contentType.startsWith("image/")) {
     throw new Error(`Non-image response: ${contentType}`);
   }
-  const buffer = await resp.arrayBuffer();
+  const buffer = Buffer.from(await resp.arrayBuffer());
   if (buffer.byteLength < 1024) {
     throw new Error(`Suspiciously small response: ${buffer.byteLength} bytes`);
   }
-  return Buffer.from(buffer).toString("base64");
+  return buffer;
+}
+
+/**
+ * Composite a "Mires" watermark on the bottom-right of the image.
+ * Uses sharp + SVG overlay so it works at any image size.
+ */
+async function addWatermark(input: Buffer): Promise<Buffer> {
+  const meta = await sharp(input).metadata();
+  const w = meta.width ?? DEFAULT_WIDTH;
+  const h = meta.height ?? DEFAULT_HEIGHT;
+
+  // Watermark sized proportionally — about 18% of image width
+  const wmWidth = Math.round(w * 0.18);
+  const wmHeight = Math.round(wmWidth * 0.32);
+  const fontSize = Math.round(wmHeight * 0.55);
+  const margin = Math.round(w * 0.025);
+
+  const svg = `
+    <svg width="${wmWidth}" height="${wmHeight}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#25F4EE" stop-opacity="0.95"/>
+          <stop offset="1" stop-color="#FE2C55" stop-opacity="0.95"/>
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="black" flood-opacity="0.5"/>
+        </filter>
+      </defs>
+      <rect x="0" y="0" width="${wmWidth}" height="${wmHeight}" rx="${wmHeight / 2}" ry="${wmHeight / 2}" fill="black" fill-opacity="0.55"/>
+      <text x="${wmWidth / 2}" y="${wmHeight * 0.7}" text-anchor="middle"
+            font-family="-apple-system, system-ui, 'Segoe UI', sans-serif"
+            font-weight="900" font-size="${fontSize}"
+            fill="url(#g)" filter="url(#shadow)">Mires</text>
+    </svg>
+  `;
+
+  return sharp(input)
+    .composite([
+      {
+        input: Buffer.from(svg),
+        top: h - wmHeight - margin,
+        left: w - wmWidth - margin,
+      },
+    ])
+    .jpeg({ quality: 92 })
+    .toBuffer();
 }
 
 export async function POST(req: NextRequest) {
@@ -61,15 +108,24 @@ export async function POST(req: NextRequest) {
     const startstamp = performance.now();
     const seed = Math.floor(Math.random() * 1_000_000);
 
-    const generatePromise = callPollinations(prompt, modelId, seed).then((base64) => {
+    const generatePromise = (async () => {
+      const raw = await callPollinations(prompt, modelId, seed);
+      let final: Buffer;
+      try {
+        final = await addWatermark(raw);
+      } catch (wmErr) {
+        // If watermarking fails, fall back to raw image so user still gets something.
+        console.error(`[watermark] failed [requestId=${requestId}]:`, wmErr);
+        final = raw;
+      }
       console.log(
         `Completed image request [requestId=${requestId}, provider=${provider}, model=${modelId}, elapsed=${(
           (performance.now() - startstamp) /
           1000
         ).toFixed(1)}s].`
       );
-      return { provider: provider as ProviderKey, image: base64 };
-    });
+      return { provider: provider as ProviderKey, image: final.toString("base64") };
+    })();
 
     const result = await withTimeout(generatePromise, TIMEOUT_MILLIS);
     return NextResponse.json(result);

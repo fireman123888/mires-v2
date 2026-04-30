@@ -1,76 +1,25 @@
+"use client";
+
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { useT } from "@/components/I18nProvider";
 import { ImageIcon, Wand2, Film, Layers, Eraser, Type, Crop, Sparkles, Palette, ArrowRight } from "lucide-react";
 
-export const metadata = { title: "AI 工具 — Mires" };
-
-const TOOLS = [
-  {
-    icon: ImageIcon,
-    title: "AI 图像生成",
-    description: "文字一键生成 4 种风格图像（Flux / 写实 / 动漫 / 极速）",
-    href: "/",
-    available: true,
-  },
-  {
-    icon: Wand2,
-    title: "AI 图像编辑",
-    description: "上传图片用自然语言精准编辑：换背景、改光线、加元素",
-    href: "/editor",
-    available: false,
-  },
-  {
-    icon: Film,
-    title: "AI 视频生成",
-    description: "一句话生成短视频，文生视频 + 图生视频",
-    href: "/video",
-    available: false,
-  },
-  {
-    icon: Eraser,
-    title: "智能擦除",
-    description: "自动识别并擦除图片中的人物、文字、水印或瑕疵",
-    href: "#",
-    available: false,
-  },
-  {
-    icon: Layers,
-    title: "图像放大",
-    description: "把低分辨率图像无损放大到 4K / 8K",
-    href: "#",
-    available: false,
-  },
-  {
-    icon: Crop,
-    title: "智能裁切",
-    description: "AI 识别画面主体，自动调整为各种社交平台适配尺寸",
-    href: "#",
-    available: false,
-  },
-  {
-    icon: Type,
-    title: "AI 文字转图标",
-    description: "输入描述生成应用图标 / Logo，多风格多尺寸",
-    href: "#",
-    available: false,
-  },
-  {
-    icon: Palette,
-    title: "风格迁移",
-    description: "把照片转换成油画 / 水彩 / 动漫 / 像素 / 赛博朋克等风格",
-    href: "#",
-    available: false,
-  },
-  {
-    icon: Sparkles,
-    title: "AI 提示词优化",
-    description: "把简短描述自动扩写成专业级英文 prompt",
-    href: "#",
-    available: false,
-  },
-];
-
 export default function ToolsPage() {
+  const { t } = useT();
+
+  const TOOLS = [
+    { icon: ImageIcon, key: "t1", href: "/", available: true },
+    { icon: Wand2, key: "t2", href: "/editor", available: false },
+    { icon: Film, key: "t3", href: "/video", available: false },
+    { icon: Eraser, key: "t4", href: "#", available: false },
+    { icon: Layers, key: "t5", href: "#", available: false },
+    { icon: Crop, key: "t6", href: "#", available: false },
+    { icon: Type, key: "t7", href: "#", available: false },
+    { icon: Palette, key: "t8", href: "#", available: false },
+    { icon: Sparkles, key: "t9", href: "#", available: false },
+  ];
+
   return (
     <div className="min-h-screen bg-background py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -82,21 +31,27 @@ export default function ToolsPage() {
             <div className="absolute top-1/2 right-1/3 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[hsl(178_92%_56%)] opacity-10 blur-[120px]" />
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
-            完整的 <span className="bg-gradient-to-r from-[hsl(178_92%_56%)] to-[hsl(347_99%_58%)] bg-clip-text text-transparent">AI 创作工具</span>箱
+            {t("tools.title.before")}
+            <span className="bg-gradient-to-r from-[hsl(178_92%_56%)] to-[hsl(347_99%_58%)] bg-clip-text text-transparent">
+              {t("tools.title.highlight")}
+            </span>
+            {t("tools.title.after")}
           </h1>
           <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            从生成到编辑、从图片到视频，覆盖创意工作流每一步。
+            {t("tools.description")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
-            const Wrapper: React.ElementType = tool.available || tool.href !== "#" ? Link : "div";
+            const Wrapper: React.ElementType = tool.href !== "#" ? Link : "div";
             const wrapperProps = tool.href !== "#" ? { href: tool.href } : {};
+            const title = t(`tools.${tool.key}.title`);
+            const desc = t(`tools.${tool.key}.desc`);
             return (
               <Wrapper
-                key={tool.title}
+                key={tool.key}
                 {...wrapperProps}
                 className={
                   "group relative rounded-xl border p-5 sm:p-6 transition-all duration-300 " +
@@ -119,9 +74,9 @@ export default function ToolsPage() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-base sm:text-lg">{tool.title}</h3>
+                    <h3 className="font-bold text-base sm:text-lg">{title}</h3>
                     {!tool.available && (
-                      <span className="text-xs text-muted-foreground">即将推出</span>
+                      <span className="text-xs text-muted-foreground">{t("tools.comingSoonLabel")}</span>
                     )}
                   </div>
                   {tool.available && (
@@ -129,7 +84,7 @@ export default function ToolsPage() {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {tool.description}
+                  {desc}
                 </p>
               </Wrapper>
             );

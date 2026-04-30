@@ -1,59 +1,62 @@
+"use client";
+
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Header } from "@/components/Header";
-
-export const metadata = { title: "定价 — Mires" };
-
-const PLANS = [
-  {
-    name: "免费版",
-    price: "¥0",
-    period: "永久",
-    highlight: false,
-    cta: "立即开始",
-    href: "/",
-    features: [
-      "无限次生成",
-      "4 种风格并行（Flux / 写实 / 动漫 / 极速）",
-      "1024×1024 分辨率",
-      "无需注册",
-      "公平队列调度",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "¥39",
-    period: "/月",
-    highlight: true,
-    cta: "暂未开放",
-    href: "#",
-    features: [
-      "免费版全部功能",
-      "优先生成（更快队列）",
-      "2048×2048 高清输出",
-      "无水印 + 私密生成",
-      "API 接入",
-      "邮件支持",
-    ],
-  },
-  {
-    name: "Team",
-    price: "联系我们",
-    period: "",
-    highlight: false,
-    cta: "暂未开放",
-    href: "#",
-    features: [
-      "Pro 全部功能",
-      "团队协作面板",
-      "自定义模型微调",
-      "SLA 保障",
-      "专属客户经理",
-    ],
-  },
-];
+import { useT } from "@/components/I18nProvider";
 
 export default function PricingPage() {
+  const { t } = useT();
+
+  const PLANS = [
+    {
+      name: t("pricing.free.name"),
+      price: "¥0",
+      period: t("pricing.free.period"),
+      highlight: false,
+      cta: t("pricing.free.cta"),
+      href: "/",
+      features: [
+        t("pricing.free.f1"),
+        t("pricing.free.f2"),
+        t("pricing.free.f3"),
+        t("pricing.free.f4"),
+        t("pricing.free.f5"),
+      ],
+    },
+    {
+      name: t("pricing.pro.name"),
+      price: "¥39",
+      period: t("pricing.pro.period"),
+      highlight: true,
+      cta: t("pricing.pro.cta"),
+      href: "#",
+      features: [
+        t("pricing.pro.f1"),
+        t("pricing.pro.f2"),
+        t("pricing.pro.f3"),
+        t("pricing.pro.f4"),
+        t("pricing.pro.f5"),
+        t("pricing.pro.f6"),
+      ],
+    },
+    {
+      name: t("pricing.team.name"),
+      price: t("pricing.team.price"),
+      period: "",
+      highlight: false,
+      cta: t("pricing.team.cta"),
+      href: "#",
+      features: [
+        t("pricing.team.f1"),
+        t("pricing.team.f2"),
+        t("pricing.team.f3"),
+        t("pricing.team.f4"),
+        t("pricing.team.f5"),
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -65,10 +68,14 @@ export default function PricingPage() {
             <div className="absolute top-1/2 right-1/3 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[hsl(178_92%_56%)] opacity-10 blur-[120px]" />
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
-            简单<span className="bg-gradient-to-r from-[hsl(178_92%_56%)] to-[hsl(347_99%_58%)] bg-clip-text text-transparent">透明</span>的定价
+            {t("pricing.title.before")}
+            <span className="bg-gradient-to-r from-[hsl(178_92%_56%)] to-[hsl(347_99%_58%)] bg-clip-text text-transparent">
+              {t("pricing.title.highlight")}
+            </span>
+            {t("pricing.title.after")}
           </h1>
           <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            免费版永远免费、无限次生成。需要更高画质或商业 API？随时升级。
+            {t("pricing.description")}
           </p>
         </div>
 
@@ -85,7 +92,7 @@ export default function PricingPage() {
             >
               {plan.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
-                  最受欢迎
+                  {t("pricing.popular")}
                 </span>
               )}
               <h3 className="text-xl font-bold">{plan.name}</h3>

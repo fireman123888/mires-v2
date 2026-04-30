@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "@/components/I18nProvider";
+
 const Badge = ({ children }: { children: React.ReactNode }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary text-foreground px-3 py-1 text-xs font-semibold ring-1 ring-white/5">
     <span className="h-1.5 w-1.5 rounded-full bg-[hsl(178_92%_56%)] shadow-[0_0_6px_hsl(178_92%_56%)]" />
@@ -6,6 +10,7 @@ const Badge = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const Hero = () => {
+  const { t } = useT();
   return (
     <section className="text-center py-8 sm:py-12 mb-6 relative">
       {/* Subtle red/cyan glow behind hero, Douyin chromatic feel */}
@@ -15,22 +20,21 @@ export const Hero = () => {
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
-        <Badge>100% 免费</Badge>
-        <Badge>无需登录</Badge>
-        <Badge>无限生成</Badge>
+        <Badge>{t("hero.badge.free")}</Badge>
+        <Badge>{t("hero.badge.noLogin")}</Badge>
+        <Badge>{t("hero.badge.unlimited")}</Badge>
       </div>
 
       <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-balance">
-        在几秒钟内创建
+        {t("hero.title.before")}
         <span className="block sm:inline bg-gradient-to-r from-[hsl(178_92%_56%)] via-white to-[hsl(347_99%_58%)] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">
-          {' 惊艳的 AI '}
+          {t("hero.title.highlight")}
         </span>
-        图像
+        {t("hero.title.after")}
       </h1>
 
       <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-        Flux / 写实 / 动漫 / 极速 —— 4 种风格一键并行生成，对比挑选最佳结果。
-        无需注册，无需 API key。
+        {t("hero.description")}
       </p>
     </section>
   );
