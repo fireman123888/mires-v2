@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { ArrowUpRight, ArrowUp, RefreshCw, Sparkles, Volume2, Square } from "lucide-react";
+import { useState } from "react";
+import { ArrowUpRight, ArrowUp, RefreshCw, Sparkles } from "lucide-react";
 import { getRandomSuggestions, Suggestion } from "@/lib/suggestions";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,8 +28,6 @@ export function PromptInput({
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { t } = useT();
 
   if (externalPrompt && externalPrompt !== input) {
@@ -76,50 +74,6 @@ export function PromptInput({
     }
   };
 
-  const stopSpeak = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current = null;
-    }
-    setIsSpeaking(false);
-  };
-
-  const handleSpeak = async () => {
-    if (!input.trim()) return;
-    if (isSpeaking) {
-      stopSpeak();
-      return;
-    }
-    setIsSpeaking(true);
-    try {
-      const resp = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input.trim(), voice: "nova" }),
-      });
-      if (!resp.ok) throw new Error(`TTS ${resp.status}`);
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        setIsSpeaking(false);
-        audioRef.current = null;
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        setIsSpeaking(false);
-        audioRef.current = null;
-      };
-      await audio.play();
-    } catch (err) {
-      console.error("TTS error:", err);
-      setIsSpeaking(false);
-    }
-  };
-
   return (
     <div id="prompt-input" className="w-full mb-8">
       <div className="bg-card border border-border rounded-xl p-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)]">
@@ -133,7 +87,6 @@ export function PromptInput({
             className="text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />
 
-          {/* Action row: optimize + tts on left, suggestions on right, submit at far right */}
           <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
             <div className="flex items-center gap-1.5">
               <button
@@ -149,21 +102,6 @@ export function PromptInput({
                   <Sparkles className="w-3.5 h-3.5 text-[hsl(178_92%_56%)]" />
                 )}
                 <span>{isOptimizing ? t("prompt.optimizing") : t("prompt.optimize")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSpeak}
-                disabled={!input.trim()}
-                title={t("prompt.tts.tooltip")}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-xs sm:text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
-              >
-                {isSpeaking ? (
-                  <Square className="w-3.5 h-3.5 text-primary" />
-                ) : (
-                  <Volume2 className="w-3.5 h-3.5 text-[hsl(178_92%_56%)]" />
-                )}
-                <span>{t("prompt.tts")}</span>
               </button>
 
               <button

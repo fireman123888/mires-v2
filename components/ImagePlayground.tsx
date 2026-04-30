@@ -23,6 +23,7 @@ import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { FAQ } from "./FAQ";
 import { Footer } from "./Footer";
+import { Testimonials } from "./Testimonials";
 
 export function ImagePlayground({
   suggestions,
@@ -153,6 +154,7 @@ export function ImagePlayground({
         <HowItWorks />
         <TrustStats />
         <Features />
+        <Testimonials />
         <FAQ />
       </div>
       <Footer />
