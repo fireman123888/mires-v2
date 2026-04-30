@@ -142,7 +142,7 @@ const zh: Messages = {
   "tools.t4.title": "智能擦除",
   "tools.t4.desc": "自动识别并擦除图片中的人物、文字、水印或瑕疵",
   "tools.t5.title": "图像放大",
-  "tools.t5.desc": "把低分辨率图像无损放大到 4K / 8K",
+  "tools.t5.desc": "在主页生成图后，每张图悬停可点 ↑ 一键升级到 2K（20 积分）",
   "tools.t6.title": "智能裁切",
   "tools.t6.desc": "AI 识别画面主体，自动调整为各种社交平台适配尺寸",
   "tools.t7.title": "AI 文字转图标",
@@ -175,6 +175,22 @@ const zh: Messages = {
   "icon.generate": "✨ 生成 4 个图标",
   "icon.generating": "正在生成 4 个变体...",
   "icon.allFailed": "全部生成失败，请稍后重试",
+
+  // Smart Erase / Background removal page
+  "erase.tag": "智能擦除背景",
+  "erase.title": "AI 一键去除图片背景",
+  "erase.subtitle": "上传任意图片，AI 自动识别主体并擦除背景，输出透明 PNG。完全在浏览器本地运行，图片不上传服务器。",
+  "erase.dropZone": "点击或拖拽图片到这里",
+  "erase.dropHint": "支持 JPG / PNG / WebP，单张最大 15MB",
+  "erase.notImage": "请选择图片文件",
+  "erase.tooBig": "图片超过 15MB，请压缩后再试",
+  "erase.original": "原图",
+  "erase.result": "去背景结果（透明 PNG）",
+  "erase.willAppear": "点击下方按钮开始处理",
+  "erase.run": "✨ 智能擦除背景",
+  "erase.processing": "AI 正在分析...",
+  "erase.clear": "清除",
+  "erase.privacy": "🔒 图片处理 100% 在你的浏览器内完成，不会上传到任何服务器",
 
   // Smart Crop page
   "crop.tag": "智能裁切",
@@ -325,7 +341,7 @@ const en: Messages = {
   "tools.t4.title": "Smart Erase",
   "tools.t4.desc": "Auto-detect and erase people, text, watermarks, or blemishes",
   "tools.t5.title": "Image Upscaling",
-  "tools.t5.desc": "Lossless upscale of low-res images to 4K / 8K",
+  "tools.t5.desc": "Hover any generated image on home, click ↑ to upscale to 2K (20 credits)",
   "tools.t6.title": "Smart Crop",
   "tools.t6.desc": "AI detects subjects and crops to social platform sizes automatically",
   "tools.t7.title": "Text to Icon",
@@ -358,6 +374,22 @@ const en: Messages = {
   "icon.generate": "✨ Generate 4 icons",
   "icon.generating": "Generating 4 variations...",
   "icon.allFailed": "All generations failed, please retry",
+
+  // Smart Erase
+  "erase.tag": "Smart Erase",
+  "erase.title": "Remove backgrounds with AI",
+  "erase.subtitle": "Upload any image and the AI auto-detects the subject and erases the background, exporting a transparent PNG. Runs fully in browser — no upload.",
+  "erase.dropZone": "Click or drop an image here",
+  "erase.dropHint": "JPG / PNG / WebP up to 15MB",
+  "erase.notImage": "Please choose an image file",
+  "erase.tooBig": "Image is over 15MB, please compress and retry",
+  "erase.original": "Original",
+  "erase.result": "Result (transparent PNG)",
+  "erase.willAppear": "Click the button below to start",
+  "erase.run": "✨ Erase background",
+  "erase.processing": "AI analyzing...",
+  "erase.clear": "Clear",
+  "erase.privacy": "🔒 Processed 100% in your browser. Image never leaves your device.",
 
   // Smart Crop page
   "crop.tag": "Smart Crop",

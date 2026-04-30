@@ -120,6 +120,7 @@ export function ImagePlayground({
                     modelId,
                     timing,
                     failed: failedProviders.includes(key),
+                    prompt: activePrompt,
                   };
                 });
 

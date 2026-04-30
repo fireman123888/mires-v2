@@ -16,6 +16,7 @@
     "@ai-sdk/google-vertex": "^2.1.0",
     "@ai-sdk/openai": "^1.1.0",
     "@ai-sdk/replicate": "^0.1.0",
+    "@imgly/background-removal": "^1.7.0",
     "@radix-ui/react-collapsible": "^1.1.2",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-scroll-area": "^1.2.2",
