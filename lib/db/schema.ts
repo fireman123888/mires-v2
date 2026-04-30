@@ -11,6 +11,8 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   // Credit balance — extended via better-auth additionalFields
   credits: integer("credits").notNull().default(200),
+  // Daily +20 refresh: tracks the last UTC date we credited the daily bonus.
+  lastDailyRefresh: text("last_daily_refresh"), // ISO YYYY-MM-DD or null
 });
 
 export const session = pgTable("session", {

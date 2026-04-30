@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Coins } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useT } from "@/components/I18nProvider";
 
@@ -10,50 +10,32 @@ export default function PricingPage() {
 
   const PLANS = [
     {
-      name: t("pricing.free.name"),
-      price: "¥0",
-      period: t("pricing.free.period"),
+      key: "starter",
       highlight: false,
-      cta: t("pricing.free.cta"),
-      href: "/",
-      features: [
-        t("pricing.free.f1"),
-        t("pricing.free.f2"),
-        t("pricing.free.f3"),
-        t("pricing.free.f4"),
-        t("pricing.free.f5"),
-      ],
+      cta_href: "/signin",
+      cta_disabled: false,
+      featureKeys: ["f1", "f2", "f3", "f4"],
     },
     {
-      name: t("pricing.pro.name"),
-      price: "¥39",
-      period: t("pricing.pro.period"),
+      key: "small",
+      highlight: false,
+      cta_href: "#",
+      cta_disabled: true,
+      featureKeys: ["f1", "f2", "f3", "f4"],
+    },
+    {
+      key: "medium",
       highlight: true,
-      cta: t("pricing.pro.cta"),
-      href: "#",
-      features: [
-        t("pricing.pro.f1"),
-        t("pricing.pro.f2"),
-        t("pricing.pro.f3"),
-        t("pricing.pro.f4"),
-        t("pricing.pro.f5"),
-        t("pricing.pro.f6"),
-      ],
+      cta_href: "#",
+      cta_disabled: true,
+      featureKeys: ["f1", "f2", "f3", "f4", "f5"],
     },
     {
-      name: t("pricing.team.name"),
-      price: t("pricing.team.price"),
-      period: "",
+      key: "large",
       highlight: false,
-      cta: t("pricing.team.cta"),
-      href: "#",
-      features: [
-        t("pricing.team.f1"),
-        t("pricing.team.f2"),
-        t("pricing.team.f3"),
-        t("pricing.team.f4"),
-        t("pricing.team.f5"),
-      ],
+      cta_href: "#",
+      cta_disabled: true,
+      featureKeys: ["f1", "f2", "f3", "f4", "f5", "f6"],
     },
   ];
 
@@ -79,48 +61,68 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={
-                "rounded-2xl border p-6 sm:p-8 flex flex-col " +
-                (plan.highlight
-                  ? "border-primary/50 bg-card shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.5)] relative"
-                  : "border-border bg-card")
-              }
-            >
-              {plan.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
-                  {t("pricing.popular")}
-                </span>
-              )}
-              <h3 className="text-xl font-bold">{plan.name}</h3>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-4xl font-black tracking-tight">{plan.price}</span>
-                <span className="text-muted-foreground text-sm">{plan.period}</span>
-              </div>
-              <ul className="mt-6 space-y-3 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-[hsl(178_92%_56%)] shrink-0 mt-0.5" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={plan.href}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
+          {PLANS.map((plan) => {
+            const name = t(`pricing.${plan.key}.name`);
+            const price = t(`pricing.${plan.key}.price`);
+            const credits = t(`pricing.${plan.key}.credits`);
+            const cta = t(`pricing.${plan.key}.cta`);
+            return (
+              <div
+                key={plan.key}
                 className={
-                  "mt-8 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors " +
+                  "rounded-2xl border p-5 sm:p-6 flex flex-col relative " +
                   (plan.highlight
-                    ? "bg-primary text-primary-foreground hover:opacity-90"
-                    : "bg-secondary text-foreground hover:bg-muted")
+                    ? "border-primary/50 bg-card shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.5)]"
+                    : "border-border bg-card")
                 }
               >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+                {plan.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground whitespace-nowrap">
+                    {t("pricing.popular")}
+                  </span>
+                )}
+
+                <h3 className="text-lg font-bold">{name}</h3>
+
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className="text-3xl font-black tracking-tight">{price}</span>
+                </div>
+
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-[hsl(178_92%_56%)] font-semibold">
+                  <Coins className="w-4 h-4" />
+                  <span>{credits}</span>
+                </div>
+
+                <ul className="mt-5 space-y-2 flex-1">
+                  {plan.featureKeys.map((fk) => (
+                    <li key={fk} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-[hsl(178_92%_56%)] shrink-0 mt-0.5" />
+                      <span>{t(`pricing.${plan.key}.${fk}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.cta_disabled ? (
+                  <div className="mt-6 py-2.5 rounded-lg text-sm font-semibold text-center bg-secondary/50 text-muted-foreground cursor-not-allowed">
+                    {cta}
+                  </div>
+                ) : (
+                  <Link
+                    href={plan.cta_href}
+                    className={
+                      "mt-6 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors " +
+                      (plan.highlight
+                        ? "bg-primary text-primary-foreground hover:opacity-90"
+                        : "bg-secondary text-foreground hover:bg-muted")
+                    }
+                  >
+                    {cta}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

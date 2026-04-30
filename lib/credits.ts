@@ -9,9 +9,64 @@ export const COSTS = {
 };
 
 export const ANONYMOUS_DAILY_LIMIT = 5;
+export const DAILY_REFRESH_AMOUNT = 20;
+export const DAILY_REFRESH_CAP = 200; // don't refill if balance already >= cap
 
 function utcToday(): string {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+/**
+ * Lazily applies the daily +20 refresh if the user hasn't received it yet today.
+ * Idempotent — safe to call before every credit operation.
+ * Capped: only adds credits if current balance < DAILY_REFRESH_CAP.
+ */
+export async function applyDailyRefresh(userId: string): Promise<{ refreshed: boolean; balance: number }> {
+  const today = utcToday();
+  // Single update conditional on lastDailyRefresh != today AND balance < cap.
+  // Using a CASE so we add at most CAP - balance (don't overshoot the cap).
+  const result = await db
+    .update(user)
+    .set({
+      credits: sql`LEAST(${user.credits} + ${DAILY_REFRESH_AMOUNT}, ${DAILY_REFRESH_CAP})`,
+      lastDailyRefresh: today,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(user.id, userId),
+        sql`(${user.lastDailyRefresh} IS NULL OR ${user.lastDailyRefresh} <> ${today})`,
+        sql`${user.credits} < ${DAILY_REFRESH_CAP}`
+      )
+    )
+    .returning({ credits: user.credits });
+
+  if (result.length > 0) {
+    const newBalance = result[0].credits;
+    await db.insert(creditTransaction).values({
+      id: randomUUID(),
+      userId,
+      delta: DAILY_REFRESH_AMOUNT, // approximate — actual may be capped
+      balanceAfter: newBalance,
+      reason: "daily_refresh",
+    });
+    return { refreshed: true, balance: newBalance };
+  }
+
+  // No refresh needed (already done today or balance >= cap). Just stamp the date
+  // so we don't re-check forever; only stamp if not already today.
+  await db
+    .update(user)
+    .set({ lastDailyRefresh: today })
+    .where(
+      and(
+        eq(user.id, userId),
+        sql`(${user.lastDailyRefresh} IS NULL OR ${user.lastDailyRefresh} <> ${today})`
+      )
+    );
+
+  const u = await db.select({ credits: user.credits }).from(user).where(eq(user.id, userId)).limit(1);
+  return { refreshed: false, balance: u[0]?.credits ?? 0 };
 }
 
 /**
@@ -23,6 +78,9 @@ export async function deductCredits(
   reason: string,
   metadata?: Record<string, unknown>
 ): Promise<{ newBalance: number } | { error: "insufficient" } | { error: "user_not_found" }> {
+  // Apply daily +20 refresh before checking balance.
+  await applyDailyRefresh(userId).catch((e) => console.warn("daily refresh failed:", e));
+
   // Use a single SQL UPDATE with a CHECK condition to keep this race-safe.
   const result = await db
     .update(user)
@@ -81,9 +139,10 @@ export async function refundCredits(
 }
 
 /**
- * Get current credit balance for a user.
+ * Get current credit balance for a user. Also applies the daily refresh if due.
  */
 export async function getCredits(userId: string): Promise<number | null> {
+  await applyDailyRefresh(userId).catch((e) => console.warn("daily refresh failed:", e));
   const u = await db
     .select({ credits: user.credits })
     .from(user)
