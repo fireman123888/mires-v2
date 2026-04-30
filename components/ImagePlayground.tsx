@@ -15,6 +15,7 @@ import {
 import { Suggestion } from "@/lib/suggestions";
 import { useImageGeneration } from "@/hooks/use-image-generation";
 import { Header } from "./Header";
+import { Hero } from "./Hero";
 
 export function ImagePlayground({
   suggestions,
@@ -75,9 +76,10 @@ export function ImagePlayground({
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <Header />
+        <Hero />
         <PromptInput
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}

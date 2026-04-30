@@ -16,27 +16,27 @@ export const PROVIDERS: Record<
   }
 > = {
   replicate: {
-    displayName: "Flux",
+    displayName: "Flux 标准",
     iconPath: "/provider-icons/replicate.svg",
-    color: "from-purple-500 to-blue-500",
+    color: "from-teal-500 to-cyan-500",
     models: ["flux", "flux-pro"],
   },
   vertex: {
-    displayName: "Photoreal",
+    displayName: "写实",
     iconPath: "/provider-icons/vertex.svg",
-    color: "from-green-500 to-emerald-500",
+    color: "from-emerald-500 to-teal-500",
     models: ["flux-realism"],
   },
   openai: {
-    displayName: "Anime",
+    displayName: "动漫",
     iconPath: "/provider-icons/openai.svg",
-    color: "from-pink-500 to-rose-500",
+    color: "from-rose-400 to-pink-400",
     models: ["flux-anime"],
   },
   fireworks: {
-    displayName: "Turbo",
+    displayName: "极速",
     iconPath: "/provider-icons/fireworks.svg",
-    color: "from-orange-500 to-red-500",
+    color: "from-amber-400 to-orange-400",
     models: ["turbo"],
   },
 };

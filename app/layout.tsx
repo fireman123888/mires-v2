@@ -15,8 +15,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "AI SDK Image Generator",
-  description: "An open-source AI image generator using the AI SDK by Vercel",
+  title: "Mires — 免费 AI 图像生成 | 无需登录",
+  description: "Mires 是免费、无需登录的 AI 图像生成平台。一次生成 4 种风格（标准 / 写实 / 动漫 / 极速），直接对比挑选。基于 Pollinations.AI 后端，完全免费。",
+  keywords: ["AI 图像", "AI 绘画", "Flux", "免费", "Pollinations"],
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="zh-CN" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <Analytics />
