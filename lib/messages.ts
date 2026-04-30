@@ -31,6 +31,11 @@ const zh: Messages = {
 
   // Prompt input
   "prompt.placeholder": "输入提示词，建议英文效果最佳...",
+  "prompt.optimize": "AI 优化",
+  "prompt.optimize.tooltip": "让 AI 把简短描述扩写成专业 prompt（中文自动译英）",
+  "prompt.tts": "朗读",
+  "prompt.tts.tooltip": "用 AI 语音朗读当前提示词",
+  "prompt.optimizing": "优化中...",
 
   // Gallery
   "gallery.title": "获取灵感",
@@ -125,6 +130,11 @@ const en: Messages = {
   "hero.description": "Flux / Photoreal / Anime / Turbo — generate 4 styles in parallel, compare and pick the best. No registration, no API key.",
 
   "prompt.placeholder": "Enter your prompt (English works best)...",
+  "prompt.optimize": "AI Optimize",
+  "prompt.optimize.tooltip": "Expand your short description into a pro-grade prompt (auto-translates Chinese to English)",
+  "prompt.tts": "Read",
+  "prompt.tts.tooltip": "Read the current prompt aloud with an AI voice",
+  "prompt.optimizing": "Optimizing...",
 
   "gallery.title": "Get Inspired",
   "gallery.subtitle": "Discover new ideas · click any example to use its prompt",
