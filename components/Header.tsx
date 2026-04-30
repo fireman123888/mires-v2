@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/I18nProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { UserBadge } from "@/components/UserBadge";
 
 const Logo = ({ size = 30 }: { size?: number }) => (
   <svg
@@ -69,15 +70,7 @@ export const Header = () => {
         {/* Right actions */}
         <div className="flex items-center gap-2 text-sm shrink-0">
           <LanguageSwitcher />
-
-          <Link
-            href="https://github.com/fireman123888/mires-v2"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:inline text-muted-foreground hover:text-foreground transition-colors px-2"
-          >
-            GitHub
-          </Link>
+          <UserBadge />
 
           {/* Mobile menu toggle */}
           <button

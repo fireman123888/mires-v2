@@ -17,6 +17,7 @@ import { useImageGeneration } from "@/hooks/use-image-generation";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Gallery } from "./Gallery";
+import { OutOfCreditsModal } from "./OutOfCreditsModal";
 
 export function ImagePlayground({
   suggestions,
@@ -144,6 +145,7 @@ export function ImagePlayground({
         )}
         <Gallery onUsePrompt={(p) => setExternalPrompt(p)} />
       </div>
+      <OutOfCreditsModal />
     </div>
   );
 }

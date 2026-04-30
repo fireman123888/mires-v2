@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateImageRequest } from "@/lib/api-types";
+import { auth } from "@/lib/auth";
+import { headers as nextHeaders } from "next/headers";
+import { COSTS, deductCredits, refundCredits, getClientIp, incrementIpUsage } from "@/lib/credits";
 
 // Vercel Hobby plan caps at 300s. Pollinations image gen can take 30s+.
 export const maxDuration = 300;
@@ -98,13 +101,40 @@ export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
   const { prompt, provider, modelId } = (await req.json()) as GenerateImageRequest;
 
-  try {
-    if (!prompt || !provider || !modelId) {
-      const error = "Invalid request parameters";
-      console.error(`${error} [requestId=${requestId}]`);
-      return NextResponse.json({ error }, { status: 400 });
-    }
+  if (!prompt || !provider || !modelId) {
+    return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
+  }
 
+  // ---- Credit / quota gate ----
+  const session = await auth.api.getSession({ headers: await nextHeaders() });
+  let charged: { type: "user"; userId: string } | { type: "ip"; ip: string };
+
+  if (session?.user) {
+    const result = await deductCredits(session.user.id, COSTS.generate, "generate", {
+      prompt: prompt.slice(0, 200),
+      provider,
+      modelId,
+    });
+    if ("error" in result) {
+      return NextResponse.json(
+        { error: result.error === "insufficient" ? "credits_insufficient" : "user_not_found", provider },
+        { status: 402 }
+      );
+    }
+    charged = { type: "user", userId: session.user.id };
+  } else {
+    const ip = getClientIp(req);
+    const used = await incrementIpUsage(ip);
+    if ("error" in used) {
+      return NextResponse.json(
+        { error: "anon_daily_limit", provider },
+        { status: 429 }
+      );
+    }
+    charged = { type: "ip", ip };
+  }
+
+  try {
     const startstamp = performance.now();
     const seed = Math.floor(Math.random() * 1_000_000);
 
@@ -114,7 +144,6 @@ export async function POST(req: NextRequest) {
       try {
         final = await addWatermark(raw);
       } catch (wmErr) {
-        // If watermarking fails, fall back to raw image so user still gets something.
         console.error(`[watermark] failed [requestId=${requestId}]:`, wmErr);
         final = raw;
       }
@@ -134,6 +163,10 @@ export async function POST(req: NextRequest) {
       `Error in generate-images [requestId=${requestId}, provider=${provider}, model=${modelId}]:`,
       error
     );
+    // Refund on failure so the user's credits aren't burned by upstream errors.
+    if (charged.type === "user") {
+      await refundCredits(charged.userId, COSTS.generate, "generate_refund", { requestId, provider }).catch(() => {});
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error", provider },
       { status: 500 }

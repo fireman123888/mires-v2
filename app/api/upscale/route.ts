@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+import { auth } from "@/lib/auth";
+import { headers as nextHeaders } from "next/headers";
+import { COSTS, deductCredits, refundCredits } from "@/lib/credits";
 
 export const maxDuration = 300;
 
@@ -39,15 +42,30 @@ async function addWatermark(input: Buffer): Promise<Buffer> {
 }
 
 export async function POST(req: NextRequest) {
+  const { prompt, model, seed } = (await req.json()) as {
+    prompt: string;
+    model?: string;
+    seed?: number;
+  };
+  if (!prompt) {
+    return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
+  }
+
+  // Upscale is a logged-in-only feature (anonymous can't burn the heavy 2K endpoint).
+  const session = await auth.api.getSession({ headers: await nextHeaders() });
+  if (!session?.user) {
+    return NextResponse.json({ error: "login_required" }, { status: 401 });
+  }
+  const deduct = await deductCredits(session.user.id, COSTS.upscale, "upscale", { prompt: prompt.slice(0, 200), model });
+  if ("error" in deduct) {
+    return NextResponse.json(
+      { error: deduct.error === "insufficient" ? "credits_insufficient" : "user_not_found" },
+      { status: 402 }
+    );
+  }
+  const userId = session.user.id;
+
   try {
-    const { prompt, model, seed } = (await req.json()) as {
-      prompt: string;
-      model?: string;
-      seed?: number;
-    };
-    if (!prompt) {
-      return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
-    }
 
     // Re-generate at 2048x2048 (Pollinations max). Reuse the seed if provided
     // so the upscaled version is "the same image, sharper".
@@ -73,6 +91,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ image: final.toString("base64") });
   } catch (error) {
     console.error("upscale error:", error);
+    await refundCredits(userId, COSTS.upscale, "upscale_refund", { prompt: prompt.slice(0, 200) }).catch(() => {});
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

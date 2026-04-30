@@ -1,0 +1,59 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { magicLink } from "better-auth/plugins";
+import { Resend } from "resend";
+import { db } from "@/lib/db";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+export const auth = betterAuth({
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL || "https://mires.top",
+  secret: process.env.BETTER_AUTH_SECRET || "fallback-only-for-build-time",
+  database: drizzleAdapter(db, {
+    provider: "pg",
+  }),
+  user: {
+    additionalFields: {
+      credits: {
+        type: "number",
+        required: false,
+        defaultValue: 200,
+      },
+    },
+  },
+  session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 min
+    },
+  },
+  plugins: [
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        if (!resend) {
+          // Local dev / unconfigured: just log so the developer can copy the link.
+          console.log(`\n[MAGIC LINK for ${email}]\n${url}\n`);
+          return;
+        }
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || "Mires <onboarding@resend.dev>",
+          to: email,
+          subject: "登录 Mires",
+          html: `
+            <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 16px;color:#111">
+              <h2 style="margin:0 0 16px;font-weight:800">登录 Mires</h2>
+              <p style="margin:0 0 24px;color:#555;line-height:1.6">点击下方按钮完成登录。链接 30 分钟内有效。</p>
+              <p><a href="${url}" style="display:inline-block;padding:12px 24px;background:#FE2C55;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">点击登录</a></p>
+              <p style="margin-top:32px;color:#888;font-size:12px;line-height:1.6">如果按钮无法点击，复制此链接到浏览器：<br><span style="word-break:break-all">${url}</span></p>
+              <p style="margin-top:24px;color:#aaa;font-size:12px">如果不是你本人发起的登录，请忽略此邮件。</p>
+            </div>
+          `,
+        });
+      },
+    }),
+  ],
+});
+
+export type Session = typeof auth.$Infer.Session;

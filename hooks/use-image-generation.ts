@@ -84,7 +84,17 @@ export function useImageGeneration(): UseImageGenerationReturn {
           });
           const data = await response.json();
           if (!response.ok) {
+            // Surface credit/quota errors through a global event so the modal can react.
+            if (data.error === "credits_insufficient" || data.error === "anon_daily_limit") {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("mires:credits-blocked", { detail: data.error }));
+              }
+            }
             throw new Error(data.error || `Server error: ${response.status}`);
+          }
+          // Refresh credit display in the header after a successful charge.
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("mires:credits-refresh"));
           }
 
           const completionTime = Date.now();
