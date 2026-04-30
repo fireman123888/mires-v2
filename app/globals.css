@@ -90,6 +90,11 @@
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }

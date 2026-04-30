@@ -109,22 +109,32 @@ export function ImageDisplay({
     });
   };
 
+  const isLoading = !image && !failed && !!timing?.startTime;
   return (
     <>
       <div
         className={cn(
-          "relative w-full aspect-square group bg-zinc-50 rounded-lg",
+          "relative w-full aspect-square group rounded-lg overflow-hidden bg-secondary/40 border border-border",
           image && !failed && "cursor-pointer",
-          (!image || failed) && "border-1 border-zinc-100",
         )}
         onClick={handleImageClick}
       >
+        {/* Animated chromatic glow during loading — matches Douyin theme */}
+        {isLoading && (
+          <>
+            <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] rounded-full bg-gradient-to-br from-[hsl(178_92%_56%)] via-transparent to-[hsl(347_99%_58%)] opacity-25 blur-3xl animate-pulse" />
+            </div>
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_30%,rgba(255,255,255,0.05)_50%,transparent_70%)] bg-[length:200%_100%] animate-[shimmer_2.5s_infinite_linear] pointer-events-none" />
+          </>
+        )}
+
         {(image || failed) && (
-          <div className="absolute top-2 left-2 max-w-[75%] bg-white/95 px-2 py-1 flex items-center gap-2 rounded-lg">
+          <div className="absolute top-2 left-2 max-w-[75%] bg-black/60 backdrop-blur-md px-2 py-1 flex items-center gap-2 rounded-md ring-1 ring-white/10 z-10">
             <TooltipProvider>
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <Label className="text-xs text-gray-900 truncate min-w-0 grow">
+                  <Label className="text-xs text-white/90 truncate min-w-0 grow">
                     {imageHelpers.formatModelId(modelId)}
                   </Label>
                 </TooltipTrigger>
@@ -205,11 +215,10 @@ export function ImageDisplay({
               </>
             ) : timing?.startTime ? (
               <>
-                {/* <div className="text-zinc-400 mb-2">{provider}</div> */}
                 <Stopwatch startTime={timing.startTime} />
               </>
             ) : (
-              <ImageIcon className="h-12 w-12 text-zinc-300" />
+              <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
             )}
           </div>
         )}
