@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Download, ImageIcon, AlertCircle, Share, Maximize2, Loader2 } from "lucide-react";
+import { Download, ImageIcon, AlertCircle, Maximize2, Loader2 } from "lucide-react";
 import { Stopwatch } from "./Stopwatch";
 import { cn } from "@/lib/utils";
 import { imageHelpers } from "@/lib/image-helpers";
@@ -49,11 +49,8 @@ export function ImageDisplay({
         }
         throw new Error(d.error || "upscale failed");
       }
-      // Trigger download of the 2K version
-      const a = document.createElement("a");
-      a.href = `data:image/jpeg;base64,${d.image}`;
-      a.download = `mires-${provider}-2k.jpg`;
-      a.click();
+      // Trigger download of the 2K version (re-encode as real PNG)
+      await imageHelpers.downloadAsPng(d.image, `${provider}-2k`);
       // Refresh credits in header
       window.dispatchEvent(new Event("mires:credits-refresh"));
     } catch (err) {
@@ -104,8 +101,8 @@ export function ImageDisplay({
     provider: string,
   ) => {
     e.stopPropagation();
-    imageHelpers.shareOrDownload(imageData, provider).catch((error) => {
-      console.error("Failed to share/download image:", error);
+    imageHelpers.downloadAsPng(imageData, provider).catch((error) => {
+      console.error("Failed to download image:", error);
     });
   };
 
@@ -160,12 +157,7 @@ export function ImageDisplay({
                 onClick={(e) => handleActionClick(e, image, provider)}
                 title="Download"
               >
-                <span className="sm:hidden">
-                  <Share className="h-4 w-4" />
-                </span>
-                <span className="hidden sm:block">
-                  <Download className="h-4 w-4" />
-                </span>
+                <Download className="h-4 w-4" />
               </Button>
               {prompt && (
                 <Button
