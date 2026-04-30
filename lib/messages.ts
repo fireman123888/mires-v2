@@ -151,6 +151,40 @@ const zh: Messages = {
   "tools.t8.desc": "把照片转换成油画 / 水彩 / 动漫 / 像素 / 赛博朋克等风格",
   "tools.t9.title": "AI 提示词优化",
   "tools.t9.desc": "把简短描述自动扩写成专业级英文 prompt",
+
+  // Optimizer page
+  "optimizer.tag": "AI 提示词优化",
+  "optimizer.title": "把短句变成专业 Prompt",
+  "optimizer.subtitle": "输入一句简短的中/英文描述，AI 自动扩写成 Stable Diffusion / Flux 模型适用的专业级英文 prompt。",
+  "optimizer.inputLabel": "你的描述（中英文都可）",
+  "optimizer.inputPlaceholder": "例如：画一只在月光下的猫",
+  "optimizer.optimize": "✨ 优化",
+  "optimizer.optimizing": "AI 正在思考...",
+  "optimizer.outputLabel": "优化后的 Prompt（英文）",
+  "optimizer.copy": "复制",
+  "optimizer.copied": "已复制",
+  "optimizer.useNow": "立即用这个 prompt 生成图像",
+
+  // Icon generator page
+  "icon.tag": "AI 文字转图标",
+  "icon.title": "一句话生成 App 图标",
+  "icon.subtitle": "输入图标主题（如：一只熊猫、一架火箭、一片树叶），选择风格，自动生成 4 张可下载的图标。",
+  "icon.inputLabel": "图标主题",
+  "icon.inputPlaceholder": "例如：熊猫、火箭、树叶、闪电...",
+  "icon.styleLabel": "风格",
+  "icon.generate": "✨ 生成 4 个图标",
+  "icon.generating": "正在生成 4 个变体...",
+  "icon.allFailed": "全部生成失败，请稍后重试",
+
+  // Style transfer page
+  "style.tag": "AI 风格化",
+  "style.title": "12 种艺术风格一键切换",
+  "style.subtitle": "输入想画的内容，选择艺术风格，AI 帮你生成对应风格的作品。水彩 / 油画 / 像素 / 赛博朋克 / 吉卜力等。",
+  "style.inputLabel": "画面内容",
+  "style.inputPlaceholder": "例如：一座高山下的湖泊",
+  "style.styleLabel": "选择风格",
+  "style.generate": "✨ 生成",
+  "style.generating": "AI 正在创作...",
 };
 
 const en: Messages = {
@@ -284,6 +318,40 @@ const en: Messages = {
   "tools.t8.desc": "Transform photos into oil / watercolor / anime / pixel / cyberpunk styles",
   "tools.t9.title": "Prompt Optimization",
   "tools.t9.desc": "Auto-expand short descriptions into professional English prompts",
+
+  // Optimizer page
+  "optimizer.tag": "AI Prompt Optimization",
+  "optimizer.title": "Turn short ideas into pro prompts",
+  "optimizer.subtitle": "Type a brief description in any language. AI auto-expands it into a professional English prompt optimized for Stable Diffusion / Flux models.",
+  "optimizer.inputLabel": "Your description (any language)",
+  "optimizer.inputPlaceholder": "e.g. a cat under moonlight",
+  "optimizer.optimize": "✨ Optimize",
+  "optimizer.optimizing": "AI is thinking...",
+  "optimizer.outputLabel": "Optimized prompt (English)",
+  "optimizer.copy": "Copy",
+  "optimizer.copied": "Copied",
+  "optimizer.useNow": "Generate with this prompt now",
+
+  // Icon generator page
+  "icon.tag": "AI Text-to-Icon",
+  "icon.title": "App icons from one sentence",
+  "icon.subtitle": "Type the icon subject (e.g. panda, rocket, leaf), pick a style, and get 4 downloadable variations instantly.",
+  "icon.inputLabel": "Icon subject",
+  "icon.inputPlaceholder": "e.g. panda, rocket, leaf, bolt...",
+  "icon.styleLabel": "Style",
+  "icon.generate": "✨ Generate 4 icons",
+  "icon.generating": "Generating 4 variations...",
+  "icon.allFailed": "All generations failed, please retry",
+
+  // Style transfer page
+  "style.tag": "AI Style Transfer",
+  "style.title": "12 art styles, one click",
+  "style.subtitle": "Type what to draw, pick an art style, and AI generates it in that style. Watercolor / oil painting / pixel / cyberpunk / Ghibli and more.",
+  "style.inputLabel": "What to draw",
+  "style.inputPlaceholder": "e.g. a lake beneath a tall mountain",
+  "style.styleLabel": "Pick a style",
+  "style.generate": "✨ Generate",
+  "style.generating": "AI is creating...",
 };
 
 export const messages: Record<Locale, Messages> = { zh, en };

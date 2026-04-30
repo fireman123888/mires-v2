@@ -15,9 +15,9 @@ export default function ToolsPage() {
     { icon: Eraser, key: "t4", href: "#", available: false },
     { icon: Layers, key: "t5", href: "#", available: false },
     { icon: Crop, key: "t6", href: "#", available: false },
-    { icon: Type, key: "t7", href: "#", available: false },
-    { icon: Palette, key: "t8", href: "#", available: false },
-    { icon: Sparkles, key: "t9", href: "#", available: false },
+    { icon: Type, key: "t7", href: "/icon", available: true },
+    { icon: Palette, key: "t8", href: "/style", available: true },
+    { icon: Sparkles, key: "t9", href: "/optimizer", available: true },
   ];
 
   return (
