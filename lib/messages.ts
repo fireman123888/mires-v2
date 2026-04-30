@@ -43,6 +43,10 @@ const zh: Messages = {
   "credits.anonLimitBody": "匿名用户每天可免费生成 5 张。注册账号即送 200 积分（约 20 张），还能解锁高清放大。",
   "credits.signinCta": "立即注册领取 200 积分",
   "credits.close": "稍后再说",
+  "rate.tooFast": "操作太快了",
+  "rate.tooFastBody": "你最近请求太频繁，请稍等几秒后再试。",
+  "rate.busy": "服务器繁忙",
+  "rate.busyBody": "当前并发用户较多，正在排队，请稍后重试（通常几秒就好）。",
 
   // Hero
   "hero.badge.free": "免费试用",
@@ -179,6 +183,10 @@ const en: Messages = {
   "credits.anonLimitBody": "Anonymous users get 5 free generations per day. Sign up for 200 free credits (~20 images) and unlock HD upscaling.",
   "credits.signinCta": "Sign up — get 200 credits",
   "credits.close": "Later",
+  "rate.tooFast": "Slow down",
+  "rate.tooFastBody": "Too many requests in a short time. Please wait a few seconds and try again.",
+  "rate.busy": "Server busy",
+  "rate.busyBody": "Many users are generating right now. You're in queue — usually clears in seconds.",
 
   "hero.badge.free": "Free trial",
   "hero.badge.noLogin": "200 credits on signup",

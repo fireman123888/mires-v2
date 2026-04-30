@@ -5,6 +5,7 @@ import { GenerateImageRequest } from "@/lib/api-types";
 import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
 import { COSTS, deductCredits, refundCredits, getClientIp, incrementIpUsage } from "@/lib/credits";
+import { acquireConcurrency, getIpRateLimit, getUserRateLimit, retryAfterSeconds } from "@/lib/ratelimit";
 
 // Vercel Hobby plan caps at 300s. Pollinations image gen can take 30s+.
 export const maxDuration = 300;
@@ -105,8 +106,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
   }
 
-  // ---- Credit / quota gate ----
+  const ip = getClientIp(req);
   const session = await auth.api.getSession({ headers: await nextHeaders() });
+
+  // ---- Layer 1: per-IP / per-user rate limit (sliding window) ----
+  const limiter = session?.user ? getUserRateLimit() : getIpRateLimit();
+  const limitKey = session?.user ? session.user.id : ip;
+  if (limiter) {
+    const r = await limiter.limit(limitKey);
+    if (!r.success) {
+      return NextResponse.json(
+        { error: "rate_limited", provider, retryAfter: retryAfterSeconds(r.reset) },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds(r.reset)) } }
+      );
+    }
+  }
+
+  // ---- Layer 2 & 3: concurrency cap (per-identity + global) ----
+  const cc = await acquireConcurrency({ userId: session?.user?.id ?? null, ip });
+  if (!cc.ok) {
+    return NextResponse.json(
+      { error: cc.reason, provider },
+      { status: 429, headers: { "Retry-After": "10" } }
+    );
+  }
+
+  // ---- Credit / quota gate ----
   let charged: { type: "user"; userId: string } | { type: "ip"; ip: string };
 
   if (session?.user) {
@@ -116,6 +141,7 @@ export async function POST(req: NextRequest) {
       modelId,
     });
     if ("error" in result) {
+      await cc.release();
       return NextResponse.json(
         { error: result.error === "insufficient" ? "credits_insufficient" : "user_not_found", provider },
         { status: 402 }
@@ -123,9 +149,9 @@ export async function POST(req: NextRequest) {
     }
     charged = { type: "user", userId: session.user.id };
   } else {
-    const ip = getClientIp(req);
     const used = await incrementIpUsage(ip);
     if ("error" in used) {
+      await cc.release();
       return NextResponse.json(
         { error: "anon_daily_limit", provider },
         { status: 429 }
@@ -163,7 +189,6 @@ export async function POST(req: NextRequest) {
       `Error in generate-images [requestId=${requestId}, provider=${provider}, model=${modelId}]:`,
       error
     );
-    // Refund on failure so the user's credits aren't burned by upstream errors.
     if (charged.type === "user") {
       await refundCredits(charged.userId, COSTS.generate, "generate_refund", { requestId, provider }).catch(() => {});
     }
@@ -171,5 +196,7 @@ export async function POST(req: NextRequest) {
       { error: error instanceof Error ? error.message : "Unknown error", provider },
       { status: 500 }
     );
+  } finally {
+    await cc.release();
   }
 }

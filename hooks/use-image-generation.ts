@@ -84,11 +84,16 @@ export function useImageGeneration(): UseImageGenerationReturn {
           });
           const data = await response.json();
           if (!response.ok) {
-            // Surface credit/quota errors through a global event so the modal can react.
-            if (data.error === "credits_insufficient" || data.error === "anon_daily_limit") {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("mires:credits-blocked", { detail: data.error }));
-              }
+            const blockable = [
+              "credits_insufficient",
+              "anon_daily_limit",
+              "rate_limited",
+              "global_busy",
+              "user_busy",
+              "ip_busy",
+            ];
+            if (blockable.includes(data.error) && typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("mires:credits-blocked", { detail: data.error }));
             }
             throw new Error(data.error || `Server error: ${response.status}`);
           }

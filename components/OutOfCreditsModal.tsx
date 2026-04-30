@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Coins, Lock, X } from "lucide-react";
 import { useT } from "@/components/I18nProvider";
 
-type Reason = "credits_insufficient" | "anon_daily_limit" | null;
+type Reason = "credits_insufficient" | "anon_daily_limit" | "rate_limited" | "global_busy" | "user_busy" | "ip_busy" | null;
 
 export function OutOfCreditsModal() {
   const [reason, setReason] = useState<Reason>(null);
@@ -22,12 +22,27 @@ export function OutOfCreditsModal() {
 
   if (!reason) return null;
 
-  const isAnon = reason === "anon_daily_limit";
-  const Icon = isAnon ? Lock : Coins;
-  const title = isAnon ? t("credits.anonLimit") : t("credits.outTitle");
-  const body = isAnon
-    ? t("credits.anonLimitBody")
-    : t("credits.outBody").replace("{cost}", "10");
+  let Icon = Coins;
+  let title = t("credits.outTitle");
+  let body = t("credits.outBody").replace("{cost}", "10");
+  let showSignin = true;
+
+  if (reason === "anon_daily_limit") {
+    Icon = Lock;
+    title = t("credits.anonLimit");
+    body = t("credits.anonLimitBody");
+    showSignin = true;
+  } else if (reason === "rate_limited") {
+    Icon = Lock;
+    title = t("rate.tooFast");
+    body = t("rate.tooFastBody");
+    showSignin = false;
+  } else if (reason === "global_busy" || reason === "user_busy" || reason === "ip_busy") {
+    Icon = Lock;
+    title = t("rate.busy");
+    body = t("rate.busyBody");
+    showSignin = false;
+  }
 
   return (
     <div
@@ -54,16 +69,22 @@ export function OutOfCreditsModal() {
         <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{body}</p>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-2">
-          <Link
-            href="/signin"
-            onClick={() => setReason(null)}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-center hover:opacity-90 transition-opacity"
-          >
-            {t("credits.signinCta")}
-          </Link>
+          {showSignin && (
+            <Link
+              href="/signin"
+              onClick={() => setReason(null)}
+              className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-center hover:opacity-90 transition-opacity"
+            >
+              {t("credits.signinCta")}
+            </Link>
+          )}
           <button
             onClick={() => setReason(null)}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-secondary text-foreground hover:bg-muted transition-colors text-sm font-medium"
+            className={
+              showSignin
+                ? "flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-secondary text-foreground hover:bg-muted transition-colors text-sm font-medium"
+                : "w-full px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+            }
           >
             {t("credits.close")}
           </button>

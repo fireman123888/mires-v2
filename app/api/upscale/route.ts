@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
-import { COSTS, deductCredits, refundCredits } from "@/lib/credits";
+import { COSTS, deductCredits, refundCredits, getClientIp } from "@/lib/credits";
+import { acquireConcurrency, getUserRateLimit, retryAfterSeconds } from "@/lib/ratelimit";
 
 export const maxDuration = 300;
 
@@ -51,13 +52,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
   }
 
-  // Upscale is a logged-in-only feature (anonymous can't burn the heavy 2K endpoint).
   const session = await auth.api.getSession({ headers: await nextHeaders() });
   if (!session?.user) {
     return NextResponse.json({ error: "login_required" }, { status: 401 });
   }
+
+  // Rate limit
+  const limiter = getUserRateLimit();
+  if (limiter) {
+    const r = await limiter.limit(`upscale:${session.user.id}`);
+    if (!r.success) {
+      return NextResponse.json(
+        { error: "rate_limited", retryAfter: retryAfterSeconds(r.reset) },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds(r.reset)) } }
+      );
+    }
+  }
+
+  // Concurrency cap
+  const cc = await acquireConcurrency({ userId: session.user.id, ip: getClientIp(req) });
+  if (!cc.ok) {
+    return NextResponse.json({ error: cc.reason }, { status: 429, headers: { "Retry-After": "10" } });
+  }
+
   const deduct = await deductCredits(session.user.id, COSTS.upscale, "upscale", { prompt: prompt.slice(0, 200), model });
   if ("error" in deduct) {
+    await cc.release();
     return NextResponse.json(
       { error: deduct.error === "insufficient" ? "credits_insufficient" : "user_not_found" },
       { status: 402 }
@@ -96,5 +116,7 @@ export async function POST(req: NextRequest) {
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
+  } finally {
+    await cc.release();
   }
 }
