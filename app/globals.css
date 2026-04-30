@@ -10,58 +10,63 @@
 
 @layer base {
   :root {
-    /* Mires theme — Raphael-style: warm-white background, teal accents */
-    --background: 40 33% 98%;
-    --foreground: 200 24% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 200 24% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 24% 14%;
-    --primary: 174 72% 38%;
+    /* Mires theme — Douyin/TikTok inspired: pure black bg, magenta + cyan accents */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 6% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 347 99% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 174 30% 95%;
-    --secondary-foreground: 174 60% 25%;
-    --muted: 200 14% 95%;
-    --muted-foreground: 200 10% 45%;
-    --accent: 174 50% 92%;
-    --accent-foreground: 174 60% 25%;
-    --destructive: 0 75% 55%;
+    --secondary: 240 6% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 6% 14%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 178 92% 56%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 347 99% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 200 14% 90%;
-    --input: 200 14% 90%;
-    --ring: 174 72% 38%;
-    --chart-1: 174 72% 38%;
-    --chart-2: 200 80% 45%;
-    --chart-3: 30 87% 60%;
-    --chart-4: 320 60% 55%;
-    --chart-5: 50 90% 55%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 347 99% 58%;
+    --chart-1: 347 99% 58%;
+    --chart-2: 178 92% 56%;
+    --chart-3: 30 95% 60%;
+    --chart-4: 280 80% 60%;
+    --chart-5: 50 95% 60%;
     --radius: 0.75rem;
+
+    /* Custom Douyin tokens */
+    --douyin-red: 347 99% 58%;   /* #FE2C55 */
+    --douyin-cyan: 178 92% 56%;  /* #25F4EE */
   }
+  /* No light theme — site is dark-only Douyin style */
   .dark {
-    --background: 200 25% 8%;
-    --foreground: 40 20% 95%;
-    --card: 200 24% 11%;
-    --card-foreground: 40 20% 95%;
-    --popover: 200 24% 11%;
-    --popover-foreground: 40 20% 95%;
-    --primary: 174 65% 50%;
-    --primary-foreground: 200 25% 8%;
-    --secondary: 200 20% 16%;
-    --secondary-foreground: 40 20% 95%;
-    --muted: 200 20% 16%;
-    --muted-foreground: 200 10% 60%;
-    --accent: 174 30% 20%;
-    --accent-foreground: 174 65% 75%;
-    --destructive: 0 65% 45%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 6% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 347 99% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 6% 14%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 178 92% 56%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 347 99% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 200 20% 18%;
-    --input: 200 20% 18%;
-    --ring: 174 65% 50%;
-    --chart-1: 174 65% 50%;
-    --chart-2: 200 80% 60%;
-    --chart-3: 30 87% 65%;
-    --chart-4: 320 60% 65%;
-    --chart-5: 50 90% 65%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 347 99% 58%;
+    --chart-1: 347 99% 58%;
+    --chart-2: 178 92% 56%;
+    --chart-3: 30 95% 60%;
+    --chart-4: 280 80% 60%;
+    --chart-5: 50 95% 60%;
   }
 }
 
