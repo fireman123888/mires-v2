@@ -176,6 +176,22 @@ const zh: Messages = {
   "icon.generating": "正在生成 4 个变体...",
   "icon.allFailed": "全部生成失败，请稍后重试",
 
+  // Smart Crop page
+  "crop.tag": "智能裁切",
+  "crop.title": "AI 自动裁切到社交平台尺寸",
+  "crop.subtitle": "上传图片，自动检测主体并裁切成 4 种主流尺寸（IG / 抖音 / YouTube / IG 竖图）。完全在浏览器本地运行，不上传服务器。",
+  "crop.dropZone": "点击或拖拽图片到这里",
+  "crop.dropHint": "支持 JPG / PNG / WebP，单张最大 20MB",
+  "crop.notImage": "请选择图片文件",
+  "crop.tooBig": "图片超过 20MB，请压缩后再试",
+  "crop.loadFailed": "图片加载失败",
+  "crop.original": "原图",
+  "crop.clear": "重新选择",
+  "crop.cropAll": "✂️ 智能裁切 4 种尺寸",
+  "crop.processing": "正在分析画面主体...",
+  "crop.results": "裁切结果",
+  "crop.downloadAll": "全部下载",
+
   // Style transfer page
   "style.tag": "AI 风格化",
   "style.title": "12 种艺术风格一键切换",
@@ -342,6 +358,22 @@ const en: Messages = {
   "icon.generate": "✨ Generate 4 icons",
   "icon.generating": "Generating 4 variations...",
   "icon.allFailed": "All generations failed, please retry",
+
+  // Smart Crop page
+  "crop.tag": "Smart Crop",
+  "crop.title": "AI auto-crop to social media sizes",
+  "crop.subtitle": "Upload an image, AI detects the subject and crops it to 4 popular ratios (IG / TikTok / YouTube / IG portrait). Runs fully in browser — no upload.",
+  "crop.dropZone": "Click or drop an image here",
+  "crop.dropHint": "JPG / PNG / WebP up to 20MB",
+  "crop.notImage": "Please choose an image file",
+  "crop.tooBig": "Image is over 20MB, please compress and retry",
+  "crop.loadFailed": "Failed to load image",
+  "crop.original": "Original",
+  "crop.clear": "Choose another",
+  "crop.cropAll": "✂️ Smart-crop 4 sizes",
+  "crop.processing": "Analyzing subject...",
+  "crop.results": "Results",
+  "crop.downloadAll": "Download all",
 
   // Style transfer page
   "style.tag": "AI Style Transfer",
