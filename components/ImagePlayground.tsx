@@ -18,6 +18,11 @@ import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Gallery } from "./Gallery";
 import { OutOfCreditsModal } from "./OutOfCreditsModal";
+import { TrustStats } from "./TrustStats";
+import { Features } from "./Features";
+import { HowItWorks } from "./HowItWorks";
+import { FAQ } from "./FAQ";
+import { Footer } from "./Footer";
 
 export function ImagePlayground({
   suggestions,
@@ -145,7 +150,12 @@ export function ImagePlayground({
           </>
         )}
         <Gallery onUsePrompt={(p) => setExternalPrompt(p)} />
+        <HowItWorks />
+        <TrustStats />
+        <Features />
+        <FAQ />
       </div>
+      <Footer />
       <OutOfCreditsModal />
     </div>
   );
