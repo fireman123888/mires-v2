@@ -13,8 +13,11 @@ function getRedis(): Redis | null {
   return _redis;
 }
 
+// Each "Generate" click on the home page fires 4 parallel requests (one per
+// provider panel). Limits below are sized so a single click never trips them,
+// with headroom for ~3 clicks/minute before throttling.
+
 // ----- Layer 1: per-IP rate limit (sliding window) -----
-// Tighter for anonymous since they don't have credit accounting.
 let _ipLimit: Ratelimit | null = null;
 export function getIpRateLimit(): Ratelimit | null {
   if (_ipLimit) return _ipLimit;
@@ -22,7 +25,7 @@ export function getIpRateLimit(): Ratelimit | null {
   if (!redis) return null;
   _ipLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(5, "60 s"),
+    limiter: Ratelimit.slidingWindow(20, "60 s"),
     analytics: true,
     prefix: "rl:ip",
   });
@@ -30,7 +33,6 @@ export function getIpRateLimit(): Ratelimit | null {
 }
 
 // ----- Layer 1: per-user rate limit (sliding window) -----
-// Looser since logged-in users already pay credits per generate.
 let _userLimit: Ratelimit | null = null;
 export function getUserRateLimit(): Ratelimit | null {
   if (_userLimit) return _userLimit;
@@ -38,7 +40,7 @@ export function getUserRateLimit(): Ratelimit | null {
   if (!redis) return null;
   _userLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(20, "60 s"),
+    limiter: Ratelimit.slidingWindow(40, "60 s"),
     analytics: true,
     prefix: "rl:user",
   });
@@ -46,7 +48,6 @@ export function getUserRateLimit(): Ratelimit | null {
 }
 
 // ----- Layer 1: cheap-endpoint rate limit (TTS, optimize-prompt) -----
-// Per-IP regardless of auth, since they're free-to-call.
 let _cheapLimit: Ratelimit | null = null;
 export function getCheapRateLimit(): Ratelimit | null {
   if (_cheapLimit) return _cheapLimit;
@@ -54,7 +55,7 @@ export function getCheapRateLimit(): Ratelimit | null {
   if (!redis) return null;
   _cheapLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(10, "60 s"),
+    limiter: Ratelimit.slidingWindow(15, "60 s"),
     analytics: true,
     prefix: "rl:cheap",
   });
@@ -99,10 +100,12 @@ export async function releaseSlot(scope: string): Promise<void> {
 
 // ----- Layer 2 + 3 wrapper -----
 
+// Sized so a single "Generate" click (4 parallel panel requests) plus an
+// upscale or two never blocks itself.
 export const CONCURRENCY = {
-  perIp: 1, // anonymous users: 1 in-flight at a time
-  perUser: 3, // logged-in: 3
-  global: 20, // protect Pollinations from being banned
+  perIp: 6,    // anonymous: 4 panel + 2 buffer
+  perUser: 8,  // logged-in: 4 panel + upscale + 3 buffer
+  global: 40,  // protects Pollinations: ~10 concurrent users at full 4-panel
 } as const;
 
 interface ConcurrencyAcquired {
