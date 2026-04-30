@@ -16,6 +16,7 @@ import { Suggestion } from "@/lib/suggestions";
 import { useImageGeneration } from "@/hooks/use-image-generation";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
+import { Gallery } from "./Gallery";
 
 export function ImagePlayground({
   suggestions,
@@ -32,6 +33,7 @@ export function ImagePlayground({
   } = useImageGeneration();
 
   const [showProviders, setShowProviders] = useState(true);
+  const [externalPrompt, setExternalPrompt] = useState<string>("");
   const [selectedModels, setSelectedModels] = useState<
     Record<ProviderKey, string>
   >(MODEL_CONFIGS.performance);
@@ -88,6 +90,7 @@ export function ImagePlayground({
           mode={mode}
           onModeChange={handleModeChange}
           suggestions={suggestions}
+          externalPrompt={externalPrompt}
         />
         <>
           {(() => {
@@ -137,6 +140,7 @@ export function ImagePlayground({
             );
           })()}
         </>
+        <Gallery onUsePrompt={(p) => setExternalPrompt(p)} />
       </div>
     </div>
   );

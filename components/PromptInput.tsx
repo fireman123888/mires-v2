@@ -15,15 +15,22 @@ interface PromptInputProps {
   mode: QualityMode;
   onModeChange: (mode: QualityMode) => void;
   suggestions: Suggestion[];
+  externalPrompt?: string;
 }
 
 export function PromptInput({
   suggestions: initSuggestions,
   isLoading,
   onSubmit,
+  externalPrompt,
 }: PromptInputProps) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
+
+  // External prompt injection from Gallery card click
+  if (externalPrompt && externalPrompt !== input) {
+    setInput(externalPrompt);
+  }
 
   const updateSuggestions = () => {
     setSuggestions(getRandomSuggestions());
@@ -53,31 +60,31 @@ export function PromptInput({
   };
 
   return (
-    <div className="w-full mb-8">
-      <div className="bg-zinc-50 rounded-xl p-4">
+    <div id="prompt-input" className="w-full mb-8">
+      <div className="bg-card border border-border rounded-xl p-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)]">
         <div className="flex flex-col gap-3">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Enter your prompt here"
+            placeholder="输入提示词，建议英文效果最佳..."
             rows={3}
-            className="text-base bg-transparent border-none p-0 resize-none placeholder:text-zinc-500 text-[#111111] focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center justify-between space-x-2">
               <button
                 onClick={updateSuggestions}
-                className="flex items-center justify-between px-2 rounded-lg py-1 bg-background text-sm hover:opacity-70 group transition-opacity duration-200"
+                className="flex items-center justify-between px-2 rounded-lg py-1 bg-secondary text-sm hover:bg-muted group transition-colors duration-200"
               >
-                <RefreshCw className="w-4 h-4 text-zinc-500 group-hover:opacity-70" />
+                <RefreshCw className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
               </button>
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionSelect(suggestion.prompt)}
                   className={cn(
-                    "flex items-center justify-between px-2 rounded-lg py-1 bg-background text-sm hover:opacity-70 group transition-opacity duration-200",
+                    "flex items-center justify-between px-2 rounded-lg py-1 bg-secondary text-sm hover:bg-muted group transition-colors duration-200",
                     index > 2
                       ? "hidden md:flex"
                       : index > 1
@@ -86,23 +93,23 @@ export function PromptInput({
                   )}
                 >
                   <span>
-                    <span className="text-black text-xs sm:text-sm">
+                    <span className="text-foreground text-xs sm:text-sm">
                       {suggestion.text.toLowerCase()}
                     </span>
                   </span>
-                  <ArrowUpRight className="ml-1 h-2 w-2 sm:h-3 sm:w-3 text-zinc-500 group-hover:opacity-70" />
+                  <ArrowUpRight className="ml-1 h-2 w-2 sm:h-3 sm:w-3 text-muted-foreground group-hover:text-foreground" />
                 </button>
               ))}
             </div>
             <button
               onClick={handleSubmit}
               disabled={isLoading || !input.trim()}
-              className="h-8 w-8 rounded-full bg-black flex items-center justify-center disabled:opacity-50"
+              className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity shadow-[0_0_15px_hsl(347_99%_58%/0.4)]"
             >
               {isLoading ? (
-                <Spinner className="w-3 h-3 text-white" />
+                <Spinner className="w-3 h-3" />
               ) : (
-                <ArrowUp className="w-5 h-5 text-white" />
+                <ArrowUp className="w-5 h-5" />
               )}
             </button>
           </div>
