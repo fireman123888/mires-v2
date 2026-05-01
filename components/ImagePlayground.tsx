@@ -92,7 +92,6 @@ export function ImagePlayground({
       <div className="max-w-7xl mx-auto">
         <Header />
         <Hero />
-        <HeroStats />
         <PromptInput
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}
@@ -154,6 +153,7 @@ export function ImagePlayground({
             })()}
           </>
         )}
+        <HeroStats />
         <Gallery onUsePrompt={(p) => setExternalPrompt(p)} />
         <HowItWorks />
         <TrustStats />

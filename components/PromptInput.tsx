@@ -148,23 +148,23 @@ export function PromptInput({
   const creditCost = mode === "quality" ? 24 : 16;
 
   return (
-    <div id="prompt-input" className="w-full mb-8">
+    <div id="prompt-input" className="w-full mb-6">
       {/* Section title */}
-      <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-3">
+      <h2 className="text-lg sm:text-xl font-black tracking-tight mb-2">
         {t("prompt.sectionTitle")}
       </h2>
 
       {/* Main input card */}
-      <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)]">
-        <div className="flex gap-4">
+      <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)]">
+        <div className="flex gap-3">
           {/* Image upload placeholder (left) */}
           <button
             type="button"
             onClick={handleUploadClick}
             title={t("prompt.upload.tooltip")}
-            className="shrink-0 w-24 h-32 sm:w-28 sm:h-36 rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-background/40 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors group relative"
+            className="shrink-0 w-20 h-24 sm:w-24 sm:h-28 rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-background/40 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors group relative"
           >
-            <ImagePlus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <ImagePlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
             {uploadHint && (
               <span className="absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] whitespace-nowrap shadow-lg">
                 {uploadHint}
@@ -178,7 +178,7 @@ export function PromptInput({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("prompt.placeholder")}
-            className="flex-1 min-h-32 sm:min-h-36 text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="flex-1 min-h-24 sm:min-h-28 text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
 
@@ -196,7 +196,7 @@ export function PromptInput({
         )}
 
         {/* Bottom chips row */}
-        <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center gap-2">
+        <div className="mt-2 pt-2 border-t border-border/60 flex flex-wrap items-center gap-1.5">
           <AspectChip value={aspect} onChange={setAspect} />
           <PresetChip
             presets={STYLE_PRESETS}
@@ -226,7 +226,7 @@ export function PromptInput({
       </div>
 
       {/* Footer toolbar (outside card) */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         {/* Left: model selector + toggles */}
         <div className="flex items-center gap-3 flex-wrap">
           <ModelSelector mode={mode} onChange={onModeChange} t={t} />
@@ -301,7 +301,7 @@ export function PromptInput({
       </div>
 
       {/* Suggestion pills (kept, optional row below) */}
-      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
           onClick={updateSuggestions}
