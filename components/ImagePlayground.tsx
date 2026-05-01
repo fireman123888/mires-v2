@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
 import { PromptInput } from "@/components/PromptInput";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
-import { ModeToggle } from "@/components/ModeToggle";
 import { HeroStats } from "@/components/HeroStats";
 import {
   MODEL_CONFIGS,
@@ -91,7 +90,6 @@ export function ImagePlayground({
         <Header />
         <Hero />
         <HeroStats />
-        <ModeToggle mode={mode} onChange={handleModeChange} />
         <PromptInput
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}

@@ -24,6 +24,8 @@ export function PromptInput({
   isLoading,
   onSubmit,
   externalPrompt,
+  mode,
+  onModeChange,
 }: PromptInputProps) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initSuggestions);
@@ -75,78 +77,118 @@ export function PromptInput({
   };
 
   return (
-    <div id="prompt-input" className="w-full mb-8">
-      <div className="bg-card border border-border rounded-xl p-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)]">
-        <div className="flex flex-col gap-3">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("prompt.placeholder")}
-            rows={3}
-            className="text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
+    <div id="prompt-input" className="w-full mb-8 max-w-2xl mx-auto">
+      <div
+        className="bg-card border border-border rounded-xl p-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4),0_0_30px_-15px_hsl(178_92%_56%/0.3)] flex flex-col"
+        style={{ aspectRatio: "1.618 / 1" }}
+      >
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t("prompt.placeholder")}
+          className="flex-1 text-base bg-transparent border-none p-0 resize-none placeholder:text-muted-foreground text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-0"
+        />
 
-          <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
-            <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between gap-2 pt-3 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <ModePill mode={mode} onChange={onModeChange} t={t} />
+            <button
+              type="button"
+              onClick={handleOptimize}
+              disabled={!input.trim() || isOptimizing}
+              title={t("prompt.optimize.tooltip")}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-xs sm:text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
+            >
+              {isOptimizing ? (
+                <Spinner className="w-3.5 h-3.5" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 text-[hsl(178_92%_56%)]" />
+              )}
+              <span>{isOptimizing ? t("prompt.optimizing") : t("prompt.optimize")}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={updateSuggestions}
+              className="flex items-center px-2 rounded-lg py-1 bg-secondary text-sm hover:bg-muted group transition-colors duration-200"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {suggestions.slice(0, 3).map((suggestion, index) => (
               <button
+                key={index}
                 type="button"
-                onClick={handleOptimize}
-                disabled={!input.trim() || isOptimizing}
-                title={t("prompt.optimize.tooltip")}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-xs sm:text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors"
-              >
-                {isOptimizing ? (
-                  <Spinner className="w-3.5 h-3.5" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-[hsl(178_92%_56%)]" />
+                onClick={() => handleSuggestionSelect(suggestion.prompt)}
+                className={cn(
+                  "flex items-center px-2 rounded-lg py-1 bg-secondary/60 text-xs sm:text-sm hover:bg-muted group transition-colors",
+                  index > 1 ? "hidden sm:flex" : "",
                 )}
-                <span>{isOptimizing ? t("prompt.optimizing") : t("prompt.optimize")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={updateSuggestions}
-                className="flex items-center px-2 rounded-lg py-1 bg-secondary text-sm hover:bg-muted group transition-colors duration-200"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
+                <span className="text-muted-foreground group-hover:text-foreground text-xs">
+                  {suggestion.text.toLowerCase()}
+                </span>
+                <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
               </button>
-            </div>
+            ))}
 
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {suggestions.slice(0, 3).map((suggestion, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleSuggestionSelect(suggestion.prompt)}
-                  className={cn(
-                    "flex items-center px-2 rounded-lg py-1 bg-secondary/60 text-xs sm:text-sm hover:bg-muted group transition-colors",
-                    index > 1 ? "hidden sm:flex" : "",
-                  )}
-                >
-                  <span className="text-muted-foreground group-hover:text-foreground text-xs">
-                    {suggestion.text.toLowerCase()}
-                  </span>
-                  <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading || !input.trim()}
-                className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity shadow-[0_0_15px_hsl(347_99%_58%/0.4)] ml-1"
-              >
-                {isLoading ? (
-                  <Spinner className="w-3 h-3" />
-                ) : (
-                  <ArrowUp className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading || !input.trim()}
+              className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity shadow-[0_0_15px_hsl(347_99%_58%/0.4)] ml-1"
+            >
+              {isLoading ? (
+                <Spinner className="w-3 h-3" />
+              ) : (
+                <ArrowUp className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ModePill({
+  mode,
+  onChange,
+  t,
+}: {
+  mode: QualityMode;
+  onChange: (mode: QualityMode) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary border border-border/50">
+      <button
+        type="button"
+        onClick={() => onChange("performance")}
+        className={cn(
+          "px-2 py-0.5 rounded-md text-[11px] sm:text-xs font-semibold transition-colors",
+          mode === "performance"
+            ? "bg-card text-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {t("hero.mode.free")}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("quality")}
+        className={cn(
+          "px-2 py-0.5 rounded-md text-[11px] sm:text-xs font-semibold transition-colors",
+          mode === "quality"
+            ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-black"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {t("hero.mode.premium")}
+      </button>
     </div>
   );
 }
