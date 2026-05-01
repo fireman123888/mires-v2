@@ -398,7 +398,7 @@ function PayModal({
 function QrImage({ method }: { method: "alipay" | "wechat" }) {
   const { t } = useT();
   const [broken, setBroken] = useState(false);
-  const src = method === "alipay" ? "/qr-alipay.jpg" : "/qr-wechat.jpg";
+  const src = method === "alipay" ? "/qr-alipay.png" : "/qr-wechat.png";
   const alt = t(method === "alipay" ? "pay.modal.qrAltAlipay" : "pay.modal.qrAltWechat");
 
   if (broken) {
