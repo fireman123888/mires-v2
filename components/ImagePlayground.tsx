@@ -22,7 +22,6 @@ import { TrustStats } from "./TrustStats";
 import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { FAQ } from "./FAQ";
-import { Footer } from "./Footer";
 import { Testimonials } from "./Testimonials";
 
 export function ImagePlayground({
@@ -157,7 +156,6 @@ export function ImagePlayground({
         <Testimonials />
         <FAQ />
       </div>
-      <Footer />
       <OutOfCreditsModal />
     </div>
   );
