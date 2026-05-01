@@ -234,6 +234,7 @@ export default function PricingPage() {
 
       {activePlan && (
         <PayModal
+          key={activePlan.id}
           plan={activePlan}
           onClose={() => setActivePlan(null)}
         />
@@ -372,7 +373,7 @@ function PayModal({
               ))}
             </div>
 
-            <QrImage method={method} />
+            <QrImage method={method} planId={plan.id} />
 
             <p className="text-xs text-center text-muted-foreground">{t("pay.modal.scanHint")}</p>
 
@@ -461,10 +462,35 @@ function PayModal({
   );
 }
 
-function QrImage({ method }: { method: "alipay" | "wechat" }) {
+// Plan-id → fixed-amount QR map. Each subscription tier has its own
+// receive-QR with the price baked in (so payer scans and the WeChat /
+// Alipay app pre-fills the exact amount, no manual entry needed).
+// Credit packs and unknown plan ids fall back to the generic QR
+// (payer manually enters the amount).
+const PLAN_QR_MAP: Record<string, { wechat: string; alipay: string }> = {
+  "pro-monthly": {
+    wechat: "/qr-wechat-pro-monthly.png",
+    alipay: "/qr-alipay-pro-monthly.png",
+  },
+  "pro-yearly": {
+    wechat: "/qr-wechat-pro-yearly.png",
+    alipay: "/qr-alipay-pro-yearly.png",
+  },
+  "ultimate-monthly": {
+    wechat: "/qr-wechat-ultimate-monthly.png",
+    alipay: "/qr-alipay-ultimate-monthly.png",
+  },
+  "ultimate-yearly": {
+    wechat: "/qr-wechat-ultimate-yearly.png",
+    alipay: "/qr-alipay-ultimate-yearly.png",
+  },
+};
+
+function QrImage({ method, planId }: { method: "alipay" | "wechat"; planId: string }) {
   const { t } = useT();
   const [broken, setBroken] = useState(false);
-  const src = method === "alipay" ? "/qr-alipay.png" : "/qr-wechat.png";
+  const planSpecific = PLAN_QR_MAP[planId]?.[method];
+  const src = planSpecific ?? (method === "alipay" ? "/qr-alipay.png" : "/qr-wechat.png");
   const alt = t(method === "alipay" ? "pay.modal.qrAltAlipay" : "pay.modal.qrAltWechat");
 
   if (broken) {
