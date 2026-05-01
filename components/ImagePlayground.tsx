@@ -5,6 +5,7 @@ import { ModelSelect } from "@/components/ModelSelect";
 import { PromptInput } from "@/components/PromptInput";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
 import { ModeToggle } from "@/components/ModeToggle";
+import { HeroStats } from "@/components/HeroStats";
 import {
   MODEL_CONFIGS,
   PROVIDERS,
@@ -89,6 +90,7 @@ export function ImagePlayground({
       <div className="max-w-7xl mx-auto">
         <Header />
         <Hero />
+        <HeroStats />
         <ModeToggle mode={mode} onChange={handleModeChange} />
         <PromptInput
           onSubmit={handlePromptSubmit}
