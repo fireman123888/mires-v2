@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
-import { Coins, LogOut, User } from "lucide-react";
+import { Coins, LogOut, Key } from "lucide-react";
 import { useT } from "@/components/I18nProvider";
 
 export function UserBadge() {
@@ -82,6 +82,10 @@ export function UserBadge() {
           <Link href="/pricing" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-secondary transition-colors">
             <Coins className="w-4 h-4" />
             {t("header.buyCredits")}
+          </Link>
+          <Link href="/account/set-password" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-secondary transition-colors">
+            <Key className="w-4 h-4" />
+            {t("header.setPassword")}
           </Link>
           <button
             onClick={async () => {
