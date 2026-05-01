@@ -10,18 +10,14 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { UserBadge } from "@/components/UserBadge";
 
 const Logo = ({ size = 30 }: { size?: number }) => (
-  <svg
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src="/logo.png"
+    alt="Mires"
     width={size}
     height={size}
-    viewBox="0 0 32 32"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <text x="9" y="24" fontFamily="system-ui, sans-serif" fontWeight="900" fontSize="20" fill="hsl(178 92% 56%)" opacity="0.9">M</text>
-    <text x="11" y="24" fontFamily="system-ui, sans-serif" fontWeight="900" fontSize="20" fill="hsl(347 99% 58%)" opacity="0.9">M</text>
-    <text x="10" y="24" fontFamily="system-ui, sans-serif" fontWeight="900" fontSize="20" fill="white">M</text>
-  </svg>
+    className="rounded-md object-cover"
+  />
 );
 
 export const Header = () => {
