@@ -17,7 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "login_required" }, { status: 401 });
   }
 
-  let body: { packId?: string; paymentMethod?: string; note?: string };
+  let body: {
+    packId?: string;
+    paymentMethod?: string;
+    note?: string;
+    screenshotUrl?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -31,6 +36,12 @@ export async function POST(req: NextRequest) {
 
   const paymentMethod = body.paymentMethod === "wechat" ? "wechat" : "alipay";
   const note = (body.note ?? "").slice(0, 500);
+  // Only accept Vercel Blob URLs to prevent abuse (linking attacker-hosted images)
+  const screenshotUrl =
+    typeof body.screenshotUrl === "string" &&
+    /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i.test(body.screenshotUrl)
+      ? body.screenshotUrl
+      : null;
 
   const orderId = `mires_${Date.now()}_${randomUUID().slice(0, 8)}`.slice(0, 32);
   await db.insert(paymentOrder).values({
@@ -45,18 +56,19 @@ export async function POST(req: NextRequest) {
     rawNotify: JSON.stringify({
       paymentMethod,
       note,
+      screenshotUrl,
       claimedAt: new Date().toISOString(),
       userEmail: session.user.email,
     }),
   });
 
-  // Fire off admin notification (best-effort, don't block response)
   notifyAdmins({
     orderId,
     packCredits: pack.credits,
     priceYuan: pack.priceCents / 100,
     paymentMethod,
     note,
+    screenshotUrl,
     userEmail: session.user.email,
     userId: session.user.id,
   }).catch((e) => console.error("[manual-claim] notify failed:", e));
@@ -70,6 +82,7 @@ interface NotifyArgs {
   priceYuan: number;
   paymentMethod: string;
   note: string;
+  screenshotUrl: string | null;
   userEmail: string;
   userId: string;
 }
@@ -96,6 +109,7 @@ async function notifyAdmins(args: NotifyArgs) {
         <li><b>支付方式：</b> ${args.paymentMethod === "wechat" ? "微信" : "支付宝"}</li>
         <li><b>用户邮箱：</b> ${args.userEmail}</li>
         <li><b>用户备注：</b> ${args.note || "（无）"}</li>
+        ${args.screenshotUrl ? `<li><b>付款截图：</b> <a href="${args.screenshotUrl}">查看</a></li>` : ""}
       </ul>
       <p><a href="${baseUrl}/admin/claims">→ 去审核</a></p>
     `.trim(),

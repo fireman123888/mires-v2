@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { paymentOrder, user, creditTransaction } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { paymentOrder } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
 import { requireAdminSession } from "@/lib/admin";
-import { randomUUID } from "crypto";
+import { approveAndGrant } from "@/lib/grant-claim";
 
 export const maxDuration = 30;
 
@@ -40,53 +40,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, action });
   }
 
-  // approve: race-safe flip + grant
-  const updated = await db
-    .update(paymentOrder)
-    .set({ status: "paid", paidAt: new Date() })
-    .where(
-      sql`${paymentOrder.id} = ${orderId} AND ${paymentOrder.status} = 'pending_review'`
-    )
-    .returning({
-      userId: paymentOrder.userId,
-      creditAmount: paymentOrder.creditAmount,
-      packId: paymentOrder.packId,
-    });
-
-  if (updated.length === 0) {
-    return NextResponse.json({ error: "not_pending" }, { status: 409 });
-  }
-
-  const { userId, creditAmount, packId } = updated[0];
-
-  const balanceRows = await db
-    .update(user)
-    .set({
-      credits: sql`${user.credits} + ${creditAmount}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(user.id, userId))
-    .returning({ credits: user.credits });
-
-  const newBalance = balanceRows[0]?.credits ?? -1;
-
-  await db.insert(creditTransaction).values({
-    id: randomUUID(),
-    userId,
-    delta: creditAmount,
-    balanceAfter: newBalance,
-    reason: "purchase",
-    metadata: JSON.stringify({
-      orderId,
-      packId,
-      provider: "manual",
-      approvedBy: session.user.email,
-    }),
+  const result = await approveAndGrant(orderId, {
+    approvedBy: session.user.email ?? "admin",
   });
 
+  if (!result.ok) {
+    const status = result.reason === "not_pending" ? 409 : 500;
+    return NextResponse.json({ error: result.reason ?? "grant_failed" }, { status });
+  }
+
   console.log(
-    `[admin/grant] approved ${orderId}: +${creditAmount} to ${userId} by ${session.user.email}. balance: ${newBalance}`
+    `[admin/grant] approved ${orderId}: +${result.creditsGranted} to ${result.userId} by ${session.user.email}. balance: ${result.newBalance}`
   );
 
-  return NextResponse.json({ ok: true, action, newBalance });
+  return NextResponse.json({
+    ok: true,
+    action,
+    newBalance: result.newBalance,
+  });
 }

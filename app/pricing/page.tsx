@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Check, Coins, Loader2, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Check, Coins, Loader2, X, Upload } from "lucide-react";
+import { upload } from "@vercel/blob/client";
 import { Header } from "@/components/Header";
 import { useT } from "@/components/I18nProvider";
 import { useSession } from "@/lib/auth-client";
@@ -168,6 +169,34 @@ function PayModal({
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  async function onPickFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setErr(t("pay.modal.uploadOnlyImages"));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErr(t("pay.modal.uploadTooBig"));
+      return;
+    }
+    setErr(null);
+    setUploading(true);
+    try {
+      const blob = await upload(`screenshots/${Date.now()}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload-screenshot",
+        contentType: file.type,
+      });
+      setScreenshotUrl(blob.url);
+    } catch (e) {
+      setErr(t("pay.modal.uploadError").replace("{e}", e instanceof Error ? e.message : "Unknown"));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -176,7 +205,7 @@ function PayModal({
       const r = await fetch("/api/checkout/manual-claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId, paymentMethod: method, note }),
+        body: JSON.stringify({ packId, paymentMethod: method, note, screenshotUrl }),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
@@ -262,6 +291,63 @@ function PayModal({
             <p className="text-xs text-center text-muted-foreground">
               {t("pay.modal.scanHint")}
             </p>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                {t("pay.modal.uploadLabel")}
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onPickFile(f);
+                  e.target.value = ""; // allow re-selecting same file
+                }}
+              />
+              {screenshotUrl ? (
+                <div className="relative inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={screenshotUrl}
+                    alt="screenshot"
+                    className="h-20 rounded-md border border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotUrl(null)}
+                    className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 shadow"
+                    aria-label="remove"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full py-3 rounded-md border border-dashed border-border bg-background text-xs text-muted-foreground flex items-center justify-center gap-2 hover:bg-muted/40 disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      {t("pay.modal.uploading")}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" />
+                      {t("pay.modal.uploadButton")}
+                    </>
+                  )}
+                </button>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {t("pay.modal.uploadHint")}
+              </p>
+            </div>
 
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">
