@@ -32,14 +32,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.png"
-                alt="Mires"
-                width={32}
-                height={32}
-                className="rounded-lg object-cover"
-              />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(178_92%_56%)] to-[hsl(347_99%_58%)] flex items-center justify-center text-white font-black text-sm">
+                M
+              </div>
               <span className="text-lg font-extrabold tracking-tight">Mires</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
