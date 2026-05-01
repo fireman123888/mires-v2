@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { paymentOrder, user as userTable } from "@/lib/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { requireAdminSession } from "@/lib/admin";
+import { formatCny } from "@/lib/plans";
 import { ClaimActions } from "./ClaimActions";
 
 export const dynamic = "force-dynamic";
@@ -83,7 +84,11 @@ export default async function AdminClaimsPage() {
                         )}
                       </div>
                       <div className="font-semibold">
-                        ¥{(c.priceCents / 100).toFixed(0)} → {c.creditAmount} 积分（{c.packId}）
+                        {formatCny(c.priceCents)} →{" "}
+                        {meta.planKind === "subscription" && meta.planTier && meta.planDays
+                          ? `${meta.planTier === "ultimate" ? "Ultimate" : "Pro"} · ${meta.planDays} 天`
+                          : `${c.creditAmount} 积分`}
+                        <span className="text-xs text-muted-foreground ml-2 font-normal">{c.packId}</span>
                       </div>
                       <div className="text-muted-foreground">
                         {c.userName ?? "—"} · {c.userEmail ?? c.userId}
@@ -134,6 +139,9 @@ interface ClaimMeta {
   screenshotUrl?: string;
   autoMatchedSource?: string;
   payerName?: string;
+  planKind?: string;
+  planTier?: string;
+  planDays?: number;
 }
 
 function parseRaw(raw: string | null): ClaimMeta {
