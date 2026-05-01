@@ -19,6 +19,14 @@ export const auth = betterAuth({
         required: false,
         defaultValue: 200,
       },
+      proPlanType: {
+        type: "string",
+        required: false,
+      },
+      proPlanExpiresAt: {
+        type: "date",
+        required: false,
+      },
     },
   },
   session: {

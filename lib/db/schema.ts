@@ -13,6 +13,10 @@ export const user = pgTable("user", {
   credits: integer("credits").notNull().default(200),
   // Daily +20 refresh: tracks the last UTC date we credited the daily bonus.
   lastDailyRefresh: text("last_daily_refresh"), // ISO YYYY-MM-DD or null
+  // Subscription plan: null = Free; "pro" / "ultimate" = paid tier.
+  // Active iff proPlanExpiresAt > now(). Set/extended on admin grant approval.
+  proPlanType: text("pro_plan_type"),
+  proPlanExpiresAt: timestamp("pro_plan_expires_at"),
 });
 
 export const session = pgTable("session", {

@@ -3,14 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
-import { Coins, LogOut, Key } from "lucide-react";
+import { Coins, LogOut, Key, Crown, Sparkles } from "lucide-react";
 import { useT } from "@/components/I18nProvider";
+import { isProActive } from "@/lib/plans";
 
 export function UserBadge() {
   const { data: session, isPending } = useSession();
   const { t } = useT();
   const [credits, setCredits] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
+
+  const proPlanType = (session?.user as unknown as { proPlanType?: string | null })?.proPlanType ?? null;
+  const proPlanExpiresAt = (session?.user as unknown as { proPlanExpiresAt?: Date | string | null })?.proPlanExpiresAt ?? null;
+  const isPro = isProActive(proPlanExpiresAt);
+  const tierLabel = proPlanType === "ultimate" ? "Ultimate" : "Pro";
+  const TierIcon = proPlanType === "ultimate" ? Crown : Sparkles;
 
   useEffect(() => {
     if (!session?.user) {
@@ -57,6 +64,12 @@ export function UserBadge() {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 text-sm px-2 py-1.5 rounded-md hover:bg-secondary transition-colors"
       >
+        {isPro && (
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[hsl(280_85%_60%)] to-[hsl(347_99%_58%)] text-white text-xs font-bold">
+            <TierIcon className="w-3 h-3" />
+            {tierLabel}
+          </span>
+        )}
         <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-xs font-semibold ring-1 ring-[hsl(178_92%_56%)]/30">
           <Coins className="w-3 h-3 text-[hsl(178_92%_56%)]" />
           {credits ?? "—"}
@@ -78,6 +91,16 @@ export function UserBadge() {
               <span className="font-semibold">{credits ?? "—"}</span>
               <span className="text-muted-foreground">{t("header.credits")}</span>
             </div>
+            {isPro && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+                <TierIcon className="w-3.5 h-3.5 text-[hsl(280_85%_60%)]" />
+                <span className="font-semibold">{tierLabel}</span>
+                <span className="text-muted-foreground">
+                  · {t("header.proExpires")}{" "}
+                  {proPlanExpiresAt ? new Date(proPlanExpiresAt).toLocaleDateString("zh-CN") : ""}
+                </span>
+              </div>
+            )}
           </div>
           <Link href="/pricing" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-secondary transition-colors">
             <Coins className="w-4 h-4" />

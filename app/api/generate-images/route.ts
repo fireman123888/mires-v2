@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
 import { COSTS, deductCredits, refundCredits, getClientIp, incrementIpUsage } from "@/lib/credits";
 import { acquireConcurrency, getIpRateLimit, getUserRateLimit, retryAfterSeconds } from "@/lib/ratelimit";
+import { isProActive } from "@/lib/plans";
 
 // Vercel Hobby plan caps at 300s. Pollinations image gen can take 30s+.
 export const maxDuration = 300;
@@ -164,14 +165,23 @@ export async function POST(req: NextRequest) {
     const startstamp = performance.now();
     const seed = Math.floor(Math.random() * 1_000_000);
 
+    // Pro/Ultimate users get watermark-free output. Free users always get watermark.
+    const proExpiresAt = (session?.user as unknown as { proPlanExpiresAt?: Date | string | null })
+      ?.proPlanExpiresAt ?? null;
+    const isPro = isProActive(proExpiresAt);
+
     const generatePromise = (async () => {
       const raw = await callPollinations(prompt, modelId, seed);
       let final: Buffer;
-      try {
-        final = await addWatermark(raw);
-      } catch (wmErr) {
-        console.error(`[watermark] failed [requestId=${requestId}]:`, wmErr);
+      if (isPro) {
         final = raw;
+      } else {
+        try {
+          final = await addWatermark(raw);
+        } catch (wmErr) {
+          console.error(`[watermark] failed [requestId=${requestId}]:`, wmErr);
+          final = raw;
+        }
       }
       console.log(
         `Completed image request [requestId=${requestId}, provider=${provider}, model=${modelId}, elapsed=${(

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
 import { db } from "@/lib/db";
 import { paymentOrder } from "@/lib/db/schema";
-import { getPack } from "@/lib/credit-packs";
+import { getPlan, formatCny } from "@/lib/plans";
 import { Resend } from "resend";
 import { randomUUID } from "crypto";
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   let body: {
-    packId?: string;
+    planId?: string;
     paymentMethod?: string;
     note?: string;
     screenshotUrl?: string;
@@ -29,14 +29,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const pack = getPack(body.packId ?? "");
-  if (!pack) {
-    return NextResponse.json({ error: "invalid_pack" }, { status: 400 });
+  const plan = getPlan(body.planId ?? "");
+  if (!plan) {
+    return NextResponse.json({ error: "invalid_plan" }, { status: 400 });
   }
 
   const paymentMethod = body.paymentMethod === "wechat" ? "wechat" : "alipay";
   const note = (body.note ?? "").slice(0, 500);
-  // Only accept Vercel Blob URLs to prevent abuse (linking attacker-hosted images)
   const screenshotUrl =
     typeof body.screenshotUrl === "string" &&
     /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i.test(body.screenshotUrl)
@@ -47,9 +46,9 @@ export async function POST(req: NextRequest) {
   await db.insert(paymentOrder).values({
     id: orderId,
     userId: session.user.id,
-    packId: pack.id,
-    creditAmount: pack.credits,
-    priceCents: pack.priceCents,
+    packId: plan.id, // reused column — actually holds planId now
+    creditAmount: plan.credits ?? 0, // 0 for subscriptions; admin grant will set plan expiry
+    priceCents: plan.priceCents,
     currency: "CNY",
     status: "pending_review",
     provider: "manual",
@@ -59,13 +58,16 @@ export async function POST(req: NextRequest) {
       screenshotUrl,
       claimedAt: new Date().toISOString(),
       userEmail: session.user.email,
+      planId: plan.id,
+      planTier: plan.tier,
+      planKind: plan.kind,
+      planDays: plan.days,
     }),
   });
 
   notifyAdmins({
     orderId,
-    packCredits: pack.credits,
-    priceYuan: pack.priceCents / 100,
+    plan,
     paymentMethod,
     note,
     screenshotUrl,
@@ -78,8 +80,7 @@ export async function POST(req: NextRequest) {
 
 interface NotifyArgs {
   orderId: string;
-  packCredits: number;
-  priceYuan: number;
+  plan: ReturnType<typeof getPlan>;
   paymentMethod: string;
   note: string;
   screenshotUrl: string | null;
@@ -89,6 +90,7 @@ interface NotifyArgs {
 
 async function notifyAdmins(args: NotifyArgs) {
   if (!resend) return;
+  if (!args.plan) return;
   const adminList = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((s) => s.trim())
@@ -96,16 +98,21 @@ async function notifyAdmins(args: NotifyArgs) {
   if (adminList.length === 0) return;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mires.top";
+  const planLabel =
+    args.plan.kind === "subscription"
+      ? `${args.plan.tier === "pro" ? "Pro" : "Ultimate"} ${args.plan.cadence === "monthly" ? "月卡" : "年卡"}（${args.plan.days} 天）`
+      : `${args.plan.credits} 积分包`;
 
   await resend.emails.send({
     from: process.env.EMAIL_FROM || "Mires <onboarding@resend.dev>",
     to: adminList,
-    subject: `[Mires] 新订单待确认 ¥${args.priceYuan} (${args.packCredits} 积分)`,
+    subject: `[Mires] 新订单待确认 ${formatCny(args.plan.priceCents)} (${planLabel})`,
     html: `
-      <h2>新积分包订单待确认</h2>
+      <h2>新订单待确认</h2>
       <ul>
         <li><b>订单号：</b> ${args.orderId}</li>
-        <li><b>金额：</b> ¥${args.priceYuan}（${args.packCredits} 积分）</li>
+        <li><b>套餐：</b> ${planLabel}</li>
+        <li><b>金额：</b> ${formatCny(args.plan.priceCents)}</li>
         <li><b>支付方式：</b> ${args.paymentMethod === "wechat" ? "微信" : "支付宝"}</li>
         <li><b>用户邮箱：</b> ${args.userEmail}</li>
         <li><b>用户备注：</b> ${args.note || "（无）"}</li>

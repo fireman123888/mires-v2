@@ -2,45 +2,54 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Check, Coins, Loader2, X, Upload } from "lucide-react";
+import { Check, Coins, Loader2, X, Upload, Crown, Sparkles } from "lucide-react";
 import { upload } from "@vercel/blob/client";
 import { Header } from "@/components/Header";
 import { useT } from "@/components/I18nProvider";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { PLANS, type Plan, formatCny } from "@/lib/plans";
 
-type PackId = "starter" | "small" | "medium" | "large";
-const PURCHASABLE_PACKS: PackId[] = ["small", "medium", "large"];
-
-const PACK_PRICE_YUAN: Record<Exclude<PackId, "starter">, number> = {
-  small: 10,
-  medium: 30,
-  large: 100,
-};
+type Cadence = "monthly" | "yearly";
 
 export default function PricingPage() {
   const { t } = useT();
   const { data: session } = useSession();
   const router = useRouter();
-  const [activePack, setActivePack] = useState<PackId | null>(null);
+  const [cadence, setCadence] = useState<Cadence>("yearly");
+  const [activePlan, setActivePlan] = useState<Plan | null>(null);
+  const [showPacks, setShowPacks] = useState(false);
 
-  const PLANS: Array<{
-    key: PackId;
-    highlight: boolean;
-    featureKeys: string[];
+  const tiers: Array<{
+    tier: "free" | "pro" | "ultimate";
+    monthlyId?: string;
+    yearlyId?: string;
+    icon?: React.ReactNode;
+    highlight?: boolean;
   }> = [
-    { key: "starter", highlight: false, featureKeys: ["f1", "f2", "f3", "f4"] },
-    { key: "small",   highlight: false, featureKeys: ["f1", "f2", "f3", "f4"] },
-    { key: "medium",  highlight: true,  featureKeys: ["f1", "f2", "f3", "f4", "f5"] },
-    { key: "large",   highlight: false, featureKeys: ["f1", "f2", "f3", "f4", "f5", "f6"] },
+    { tier: "free" },
+    {
+      tier: "pro",
+      monthlyId: "pro-monthly",
+      yearlyId: "pro-yearly",
+      icon: <Sparkles className="w-4 h-4" />,
+    },
+    {
+      tier: "ultimate",
+      monthlyId: "ultimate-monthly",
+      yearlyId: "ultimate-yearly",
+      icon: <Crown className="w-4 h-4" />,
+      highlight: true,
+    },
   ];
 
-  const handlePurchase = (packId: PackId) => {
+  const handleUpgrade = (tier: "pro" | "ultimate") => {
     if (!session?.user) {
       router.push("/signin");
       return;
     }
-    setActivePack(packId);
+    const planId = cadence === "monthly" ? `${tier}-monthly` : `${tier}-yearly`;
+    setActivePlan(PLANS[planId]);
   };
 
   return (
@@ -48,7 +57,7 @@ export default function PricingPage() {
       <div className="max-w-7xl mx-auto">
         <Header />
 
-        <div className="text-center py-12 relative">
+        <div className="text-center py-10 sm:py-14 relative">
           <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
             <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[hsl(347_99%_58%)] opacity-15 blur-[120px]" />
             <div className="absolute top-1/2 right-1/3 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[hsl(178_92%_56%)] opacity-10 blur-[120px]" />
@@ -60,92 +69,173 @@ export default function PricingPage() {
             </span>
             {t("pricing.title.after")}
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("pricing.description")}
+          <p className="mt-3 text-base text-muted-foreground max-w-xl mx-auto">
+            {t("pricing.subtitle")}
           </p>
+
+          {/* Monthly / yearly toggle */}
+          <div className="mt-6 inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCadence("monthly")}
+              className={
+                "px-4 py-1.5 rounded-md text-sm font-semibold transition-colors " +
+                (cadence === "monthly"
+                  ? "bg-card text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t("pricing.cadence.monthly")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCadence("yearly")}
+              className={
+                "px-4 py-1.5 rounded-md text-sm font-semibold transition-colors flex items-center gap-2 " +
+                (cadence === "yearly"
+                  ? "bg-card text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t("pricing.cadence.yearly")}
+              <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary font-bold">
+                {t("pricing.cadence.save")}
+              </span>
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
-          {PLANS.map((plan) => {
-            const name = t(`pricing.${plan.key}.name`);
-            const price = t(`pricing.${plan.key}.price`);
-            const credits = t(`pricing.${plan.key}.credits`);
-            const cta = t(`pricing.${plan.key}.cta`);
-            const isPurchasable = PURCHASABLE_PACKS.includes(plan.key);
+        {/* 3 plan cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+          {tiers.map((row) => {
+            const planId = cadence === "monthly" ? row.monthlyId : row.yearlyId;
+            const plan = planId ? PLANS[planId] : null;
+            const name = t(`pricing.tier.${row.tier}.name`);
+            const tagline = t(`pricing.tier.${row.tier}.tagline`);
+            const features = (t(`pricing.tier.${row.tier}.features`) as unknown as string).split("|");
 
             return (
               <div
-                key={plan.key}
+                key={row.tier}
                 className={
                   "rounded-2xl border p-5 sm:p-6 flex flex-col relative " +
-                  (plan.highlight
+                  (row.highlight
                     ? "border-primary/50 bg-card shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.5)]"
                     : "border-border bg-card")
                 }
               >
-                {plan.highlight && (
+                {row.highlight && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground whitespace-nowrap">
                     {t("pricing.popular")}
                   </span>
                 )}
-                <h3 className="text-lg font-bold">{name}</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black tracking-tight">{price}</span>
+
+                <div className="flex items-center gap-2">
+                  {row.icon}
+                  <h3 className="text-lg font-bold">{name}</h3>
                 </div>
-                <div className="mt-2 flex items-center gap-1.5 text-sm text-[hsl(178_92%_56%)] font-semibold">
-                  <Coins className="w-4 h-4" />
-                  <span>{credits}</span>
+                <p className="mt-1 text-xs text-muted-foreground">{tagline}</p>
+
+                <div className="mt-5 flex items-baseline gap-1">
+                  {row.tier === "free" ? (
+                    <span className="text-3xl font-black tracking-tight">{t("pricing.free.price")}</span>
+                  ) : plan ? (
+                    <>
+                      <span className="text-3xl font-black tracking-tight">{formatCny(plan.priceCents)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {cadence === "monthly" ? t("pricing.per.month") : t("pricing.per.year")}
+                      </span>
+                    </>
+                  ) : null}
                 </div>
+                {row.tier !== "free" && cadence === "yearly" && plan && (
+                  <p className="mt-1 text-xs text-emerald-500 font-medium">
+                    {t("pricing.yearlyEquiv").replace("{n}", (plan.priceCents / 100 / 12).toFixed(1))}
+                  </p>
+                )}
+
                 <ul className="mt-5 space-y-2 flex-1">
-                  {plan.featureKeys.map((fk) => (
-                    <li key={fk} className="flex items-start gap-2 text-sm">
+                  {features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
                       <Check className="w-4 h-4 text-[hsl(178_92%_56%)] shrink-0 mt-0.5" />
-                      <span>{t(`pricing.${plan.key}.${fk}`)}</span>
+                      <span>{f}</span>
                     </li>
                   ))}
                 </ul>
 
-                {plan.key === "starter" ? (
+                {row.tier === "free" ? (
                   <Link
                     href="/signin"
                     className="mt-6 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors bg-secondary text-foreground hover:bg-muted"
                   >
-                    {cta}
+                    {t("pricing.cta.startFree")}
                   </Link>
-                ) : isPurchasable ? (
+                ) : (
                   <button
                     type="button"
-                    onClick={() => handlePurchase(plan.key)}
+                    onClick={() => handleUpgrade(row.tier as "pro" | "ultimate")}
                     className={
                       "mt-6 py-2.5 rounded-lg text-sm font-semibold transition-colors " +
-                      (plan.highlight
+                      (row.highlight
                         ? "bg-primary text-primary-foreground hover:opacity-90"
                         : "bg-secondary text-foreground hover:bg-muted")
                     }
                   >
-                    {t(`pricing.${plan.key}.buyCta`)}
+                    {t(`pricing.cta.upgrade.${row.tier}`)}
                   </button>
-                ) : (
-                  <div className="mt-6 py-2.5 rounded-lg text-sm font-semibold text-center bg-secondary/50 text-muted-foreground cursor-not-allowed">
-                    {cta}
-                  </div>
                 )}
               </div>
             );
           })}
         </div>
 
-        <p className="mt-10 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
+        {/* Credit packs accordion */}
+        <div className="mt-10 max-w-5xl mx-auto">
+          <button
+            type="button"
+            onClick={() => setShowPacks(!showPacks)}
+            className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+          >
+            <Coins className="w-4 h-4" />
+            {showPacks ? t("pricing.packs.hide") : t("pricing.packs.show")}
+          </button>
+
+          {showPacks && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(["pack-small", "pack-medium", "pack-large"] as const).map((id) => {
+                const p = PLANS[id];
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (!session?.user) { router.push("/signin"); return; }
+                      setActivePlan(p);
+                    }}
+                    className="rounded-lg border border-border bg-card p-4 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <div className="text-base font-bold">{formatCny(p.priceCents)}</div>
+                    <div className="text-xs text-[hsl(178_92%_56%)] font-semibold mt-1 flex items-center gap-1">
+                      <Coins className="w-3 h-3" />
+                      {p.credits} {t("pricing.packs.credits")}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{t("pricing.packs.never")}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
           {t("pricing.payHint")}
         </p>
       </div>
 
-      {activePack && activePack !== "starter" && (
+      {activePlan && (
         <PayModal
-          packId={activePack as Exclude<PackId, "starter">}
-          priceYuan={PACK_PRICE_YUAN[activePack as Exclude<PackId, "starter">]}
-          credits={Number(t(`pricing.${activePack}.credits`).replace(/\D/g, "")) || 0}
-          onClose={() => setActivePack(null)}
+          plan={activePlan}
+          onClose={() => setActivePlan(null)}
         />
       )}
     </div>
@@ -153,14 +243,10 @@ export default function PricingPage() {
 }
 
 function PayModal({
-  packId,
-  priceYuan,
-  credits,
+  plan,
   onClose,
 }: {
-  packId: "small" | "medium" | "large";
-  priceYuan: number;
-  credits: number;
+  plan: Plan;
   onClose: () => void;
 }) {
   const { t } = useT();
@@ -172,6 +258,12 @@ function PayModal({
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const priceYuan = plan.priceCents / 100;
+  const subtitle =
+    plan.kind === "subscription"
+      ? `${plan.tier === "pro" ? "Pro" : "Ultimate"} · ${plan.days} ${t("pay.modal.days")}`
+      : `${plan.credits} ${t("pricing.packs.credits")}`;
 
   async function onPickFile(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -205,7 +297,7 @@ function PayModal({
       const r = await fetch("/api/checkout/manual-claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId, paymentMethod: method, note, screenshotUrl }),
+        body: JSON.stringify({ planId: plan.id, paymentMethod: method, note, screenshotUrl }),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
@@ -246,9 +338,7 @@ function PayModal({
 
         {success ? (
           <div className="p-5 text-sm space-y-4">
-            <p className="text-muted-foreground leading-relaxed">
-              {t("pay.modal.successBody")}
-            </p>
+            <p className="text-muted-foreground leading-relaxed">{t("pay.modal.successBody")}</p>
             <button
               type="button"
               onClick={onClose}
@@ -260,12 +350,8 @@ function PayModal({
         ) : (
           <div className="p-5 space-y-4">
             <div className="text-center">
-              <div className="text-2xl font-black">
-                {t("pay.modal.amount").replace("{n}", String(priceYuan))}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {credits} 积分 · {packId}
-              </div>
+              <div className="text-2xl font-black">{t("pay.modal.amount").replace("{n}", String(priceYuan))}</div>
+              <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
             </div>
 
             <div className="flex gap-2">
@@ -288,14 +374,10 @@ function PayModal({
 
             <QrImage method={method} />
 
-            <p className="text-xs text-center text-muted-foreground">
-              {t("pay.modal.scanHint")}
-            </p>
+            <p className="text-xs text-center text-muted-foreground">{t("pay.modal.scanHint")}</p>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                {t("pay.modal.uploadLabel")}
-              </label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t("pay.modal.uploadLabel")}</label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -304,17 +386,13 @@ function PayModal({
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) onPickFile(f);
-                  e.target.value = ""; // allow re-selecting same file
+                  e.target.value = "";
                 }}
               />
               {screenshotUrl ? (
                 <div className="relative inline-block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={screenshotUrl}
-                    alt="screenshot"
-                    className="h-20 rounded-md border border-border"
-                  />
+                  <img src={screenshotUrl} alt="screenshot" className="h-20 rounded-md border border-border" />
                   <button
                     type="button"
                     onClick={() => setScreenshotUrl(null)}
@@ -332,27 +410,17 @@ function PayModal({
                   className="w-full py-3 rounded-md border border-dashed border-border bg-background text-xs text-muted-foreground flex items-center justify-center gap-2 hover:bg-muted/40 disabled:opacity-50"
                 >
                   {uploading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      {t("pay.modal.uploading")}
-                    </>
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" />{t("pay.modal.uploading")}</>
                   ) : (
-                    <>
-                      <Upload className="w-3.5 h-3.5" />
-                      {t("pay.modal.uploadButton")}
-                    </>
+                    <><Upload className="w-3.5 h-3.5" />{t("pay.modal.uploadButton")}</>
                   )}
                 </button>
               )}
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {t("pay.modal.uploadHint")}
-              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">{t("pay.modal.uploadHint")}</p>
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                {t("pay.modal.noteLabel")}
-              </label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t("pay.modal.noteLabel")}</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -364,9 +432,7 @@ function PayModal({
             </div>
 
             {err && (
-              <div className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">
-                {err}
-              </div>
+              <div className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">{err}</div>
             )}
 
             <div className="flex gap-2 pt-1">
@@ -411,7 +477,6 @@ function QrImage({ method }: { method: "alipay" | "wechat" }) {
     );
   }
 
-  // Plain img tag — these are user-uploaded static QR files, no optimization needed.
   // eslint-disable-next-line @next/next/no-img-element
   return (
     <img

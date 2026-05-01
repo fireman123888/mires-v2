@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { paymentOrder, user, creditTransaction } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { isProActive } from "@/lib/plans";
 
 export interface GrantResult {
   ok: boolean;
@@ -10,46 +11,63 @@ export interface GrantResult {
   userId?: string;
   newBalance?: number;
   creditsGranted?: number;
+  planTier?: string;
+  planDays?: number;
+  newPlanExpiresAt?: Date;
 }
 
 /**
- * Race-safe approve + credit-grant. Used by both /api/admin/grant (manual)
- * and /api/checkout/auto-match (webhook).
+ * Race-safe approve. Used by both /api/admin/grant (manual) and
+ * /api/checkout/auto-match (webhook).
  *
- * `extraNotify` gets merged into the order's existing rawNotify JSON so we
- * preserve the original claim data alongside whoever approved it.
+ * Two grant kinds (decided by rawNotify.planKind):
+ *  - "credit-pack" → add creditAmount to user.credits
+ *  - "subscription" → set user.proPlanType + extend proPlanExpiresAt
+ *                     by planDays (stacks: if already active, adds to existing expiry)
+ *
+ * `extraNotify` is merged into the order's rawNotify so the audit trail
+ * shows whoever approved it.
  */
 export async function approveAndGrant(
   orderId: string,
   meta: {
-    approvedBy: string; // admin email or "auto:alipay" etc
+    approvedBy: string;
     extraNotify?: Record<string, unknown>;
   }
 ): Promise<GrantResult> {
-  // Read existing rawNotify so we can merge audit fields.
   const existing = await db
-    .select({ rawNotify: paymentOrder.rawNotify })
+    .select({
+      rawNotify: paymentOrder.rawNotify,
+      creditAmount: paymentOrder.creditAmount,
+      packId: paymentOrder.packId,
+    })
     .from(paymentOrder)
     .where(eq(paymentOrder.id, orderId))
     .limit(1);
 
-  let mergedRaw: string | null = null;
-  if (existing.length > 0) {
-    const prev = safeParse(existing[0].rawNotify);
-    mergedRaw = JSON.stringify({
-      ...prev,
-      ...meta.extraNotify,
-      approvedBy: meta.approvedBy,
-      approvedAt: new Date().toISOString(),
-    });
+  if (existing.length === 0) {
+    return { ok: false, reason: "not_pending", orderId };
   }
 
+  const prev = safeParse(existing[0].rawNotify);
+  const planKind = (prev.planKind as string) ?? "credit-pack"; // legacy default
+  const planTier = (prev.planTier as string) ?? "free";
+  const planDays = typeof prev.planDays === "number" ? prev.planDays : 0;
+
+  const mergedRaw = JSON.stringify({
+    ...prev,
+    ...meta.extraNotify,
+    approvedBy: meta.approvedBy,
+    approvedAt: new Date().toISOString(),
+  });
+
+  // Race-safe flip
   const updated = await db
     .update(paymentOrder)
     .set({
       status: "paid",
       paidAt: new Date(),
-      ...(mergedRaw !== null ? { rawNotify: mergedRaw } : {}),
+      rawNotify: mergedRaw,
     })
     .where(
       sql`${paymentOrder.id} = ${orderId} AND ${paymentOrder.status} = 'pending_review'`
@@ -65,6 +83,59 @@ export async function approveAndGrant(
   }
 
   const { userId, creditAmount, packId } = updated[0];
+
+  if (planKind === "subscription" && (planTier === "pro" || planTier === "ultimate") && planDays > 0) {
+    // Subscription grant: set tier + extend expiry
+    const userRows = await db
+      .select({
+        proPlanType: user.proPlanType,
+        proPlanExpiresAt: user.proPlanExpiresAt,
+      })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+    if (userRows.length === 0) {
+      return { ok: false, reason: "user_not_found", orderId, userId };
+    }
+
+    // If user has an active plan, extend from current expiry; else from now.
+    // Tier upgrade (pro → ultimate) replaces tier but stacks days.
+    const existingActive = isProActive(userRows[0].proPlanExpiresAt);
+    const baseTime = existingActive
+      ? new Date(userRows[0].proPlanExpiresAt!).getTime()
+      : Date.now();
+    const newExpiresAt = new Date(baseTime + planDays * 24 * 60 * 60 * 1000);
+
+    // Upgrade rule: if buying ultimate, always set ultimate; if buying pro
+    // while already ultimate, keep ultimate (don't downgrade).
+    const newTier =
+      userRows[0].proPlanType === "ultimate" && planTier === "pro"
+        ? "ultimate"
+        : planTier;
+
+    await db
+      .update(user)
+      .set({
+        proPlanType: newTier,
+        proPlanExpiresAt: newExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, userId));
+
+    return {
+      ok: true,
+      orderId,
+      userId,
+      planTier: newTier,
+      planDays,
+      newPlanExpiresAt: newExpiresAt,
+    };
+  }
+
+  // Credit-pack grant (legacy + current "pack-*" plans)
+  if (creditAmount <= 0) {
+    return { ok: true, orderId, userId, creditsGranted: 0 };
+  }
 
   const balanceRows = await db
     .update(user)
