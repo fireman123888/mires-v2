@@ -30,6 +30,7 @@ function SignInInner() {
   const [error, setError] = useState<string | null>(null);
 
   const justVerified = searchParams.get("verified") === "1";
+  const justReset = searchParams.get("reset") === "1";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +101,11 @@ function SignInInner() {
               ✓ {t("signin.verified")}
             </div>
           )}
+          {justReset && (
+            <div className="mb-4 text-sm text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-3 py-2 text-center">
+              ✓ {t("signin.passwordReset")}
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit}
@@ -150,7 +156,12 @@ function SignInInner() {
 
             {mode === "password" && (
               <label className="block">
-                <span className="text-sm font-medium text-foreground">{t("signin.password")}</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-medium text-foreground">{t("signin.password")}</span>
+                  <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    {t("signin.forgot")}
+                  </Link>
+                </div>
                 <div className="mt-2 relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input

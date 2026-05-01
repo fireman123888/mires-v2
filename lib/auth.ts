@@ -34,6 +34,26 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     autoSignIn: false,
     minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      if (!resend) {
+        console.log(`\n[RESET PASSWORD for ${user.email}]\n${url}\n`);
+        return;
+      }
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "Mires <onboarding@resend.dev>",
+        to: user.email,
+        subject: "重置你的 Mires 密码",
+        html: `
+          <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 16px;color:#111">
+            <h2 style="margin:0 0 16px;font-weight:800">重置你的 Mires 密码</h2>
+            <p style="margin:0 0 24px;color:#555;line-height:1.6">点击下方按钮设置新密码。链接 1 小时内有效。</p>
+            <p><a href="${url}" style="display:inline-block;padding:12px 24px;background:#FE2C55;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">重置密码</a></p>
+            <p style="margin-top:32px;color:#888;font-size:12px;line-height:1.6">如果按钮无法点击，复制此链接到浏览器：<br><span style="word-break:break-all">${url}</span></p>
+            <p style="margin-top:24px;color:#aaa;font-size:12px">如果不是你本人发起的，请忽略此邮件，密码不会变化。</p>
+          </div>
+        `,
+      });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

@@ -16,6 +16,7 @@ export default function SignUpPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [existingUser, setExistingUser] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,18 @@ export default function SignUpPage() {
         name: name.trim() || email.trim().split("@")[0],
       });
       if (error) {
-        setError(error.message || t("signup.error"));
+        // better-auth returns USER_ALREADY_EXISTS / similar for existing accounts
+        const code = error.code || "";
+        const msg = (error.message || "").toLowerCase();
+        if (
+          code === "USER_ALREADY_EXISTS" ||
+          msg.includes("already") ||
+          msg.includes("exists")
+        ) {
+          setExistingUser(true);
+        } else {
+          setError(error.message || t("signup.error"));
+        }
         setSubmitting(false);
         return;
       }
@@ -61,16 +73,41 @@ export default function SignUpPage() {
 
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-              {sent ? t("signup.sent.title") : t("signup.title")}
+              {existingUser
+                ? t("signup.existing.heading")
+                : sent
+                ? t("signup.sent.title")
+                : t("signup.title")}
             </h1>
             <p className="mt-3 text-muted-foreground text-sm">
-              {sent
+              {existingUser
+                ? t("signup.existing.subtitle").replace("{email}", email.trim())
+                : sent
                 ? t("signup.sent.subtitle").replace("{email}", email.trim())
                 : t("signup.subtitle")}
             </p>
           </div>
 
-          {sent ? (
+          {existingUser ? (
+            <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-6 text-sm space-y-4 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4)]">
+              <p className="font-semibold">{t("signup.existing.title")}</p>
+              <p className="text-muted-foreground leading-relaxed">{t("signup.existing.body")}</p>
+              <div className="flex gap-2">
+                <Link
+                  href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+                  className="flex-1 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold text-center hover:opacity-90"
+                >
+                  {t("signup.existing.reset")}
+                </Link>
+                <Link
+                  href="/signin"
+                  className="flex-1 py-2 rounded-md bg-secondary text-foreground text-sm font-semibold text-center hover:bg-muted"
+                >
+                  {t("signup.existing.signin")}
+                </Link>
+              </div>
+            </div>
+          ) : sent ? (
             <div className="bg-card border border-border rounded-xl p-6 text-sm text-muted-foreground space-y-3 shadow-[0_0_30px_-15px_hsl(347_99%_58%/0.4)]">
               <p>{t("signup.sent.body")}</p>
               <p className="text-xs">{t("signup.sent.spam")}</p>
