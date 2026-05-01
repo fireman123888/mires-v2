@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { I18nProvider } from "@/components/I18nProvider";
 import { Footer } from "@/components/Footer";
+import { FeedbackButton } from "@/components/FeedbackButton";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <I18nProvider>
           {children}
           <Footer />
+          <FeedbackButton />
         </I18nProvider>
         <Analytics />
       </body>

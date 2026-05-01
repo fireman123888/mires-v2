@@ -95,6 +95,30 @@ export const paymentOrder = pgTable(
   })
 );
 
+// User feedback / bug reports / feature requests. Anonymous welcome
+// (userId is nullable). Adminstrators triage from /admin/feedback.
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    email: text("email"), // optional contact (auto-filled from session if logged in)
+    type: text("type").notNull(), // 'bug' | 'feature' | 'general' | 'praise'
+    rating: integer("rating"), // 1..5, nullable
+    message: text("message").notNull(),
+    pageUrl: text("page_url"), // url of the page where feedback was submitted
+    userAgent: text("user_agent"),
+    status: text("status").notNull().default("new"), // 'new' | 'in_progress' | 'resolved' | 'wontfix'
+    adminNote: text("admin_note"), // internal note added during triage
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at"),
+  },
+  (t) => ({
+    statusIdx: index("feedback_status_idx").on(t.status, t.createdAt),
+    userIdx: index("feedback_user_idx").on(t.userId, t.createdAt),
+  })
+);
+
 // Track anonymous IP usage for the daily free quota.
 export const ipDailyUsage = pgTable(
   "ip_daily_usage",
