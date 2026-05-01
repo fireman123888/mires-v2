@@ -6,9 +6,14 @@ import { randomUUID } from "crypto";
 export const COSTS = {
   generate: 4,
   upscale: 20,
+  nanoBanana: 12,
 };
 
 export const ANONYMOUS_DAILY_LIMIT = 5;
+// Global daily cap for the AI Studio free tier (50 RPD on gemini-3-pro-image-preview).
+// Counted across the whole site, not per-IP. Cap leaves 5-call headroom for retries.
+export const NANO_BANANA_DAILY_CAP = 45;
+export const NANO_BANANA_GLOBAL_KEY = "__nano_banana_global__";
 export const DAILY_REFRESH_AMOUNT = 20;
 export const DAILY_REFRESH_CAP = 200; // don't refill if balance already >= cap
 
@@ -177,6 +182,50 @@ export async function incrementIpUsage(
     return { error: "limit" };
   }
   return { count: result[0].count, remaining: ANONYMOUS_DAILY_LIMIT - result[0].count };
+}
+
+/**
+ * Atomically increment a global daily counter, capped at `cap`. Used for
+ * shared quotas like Gemini AI Studio's 50 RPD per API key. Reuses the
+ * ipDailyUsage table with a sentinel `key` in the `ip` column.
+ */
+export async function incrementGlobalDailyCounter(
+  key: string,
+  cap: number
+): Promise<{ count: number; remaining: number } | { error: "limit" }> {
+  const day = utcToday();
+  const result = await db
+    .insert(ipDailyUsage)
+    .values({ ip: key, day, count: 1 })
+    .onConflictDoUpdate({
+      target: [ipDailyUsage.ip, ipDailyUsage.day],
+      set: {
+        count: sql`${ipDailyUsage.count} + 1`,
+        updatedAt: new Date(),
+      },
+      setWhere: sql`${ipDailyUsage.count} < ${cap}`,
+    })
+    .returning({ count: ipDailyUsage.count });
+
+  if (result.length === 0) return { error: "limit" };
+  return { count: result[0].count, remaining: cap - result[0].count };
+}
+
+/**
+ * Read current global counter value (for displaying remaining quota).
+ */
+export async function getGlobalDailyCounter(
+  key: string,
+  cap: number
+): Promise<{ used: number; remaining: number }> {
+  const day = utcToday();
+  const row = await db
+    .select({ count: ipDailyUsage.count })
+    .from(ipDailyUsage)
+    .where(and(eq(ipDailyUsage.ip, key), eq(ipDailyUsage.day, day)))
+    .limit(1);
+  const used = row[0]?.count ?? 0;
+  return { used, remaining: Math.max(0, cap - used) };
 }
 
 /**

@@ -4,9 +4,24 @@ import { ProviderKey } from "@/lib/provider-config";
 import { GenerateImageRequest } from "@/lib/api-types";
 import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
-import { COSTS, deductCredits, refundCredits, getClientIp, incrementIpUsage } from "@/lib/credits";
+import {
+  COSTS,
+  deductCredits,
+  refundCredits,
+  getClientIp,
+  incrementIpUsage,
+  incrementGlobalDailyCounter,
+  NANO_BANANA_DAILY_CAP,
+  NANO_BANANA_GLOBAL_KEY,
+} from "@/lib/credits";
 import { acquireConcurrency, getIpRateLimit, getUserRateLimit, retryAfterSeconds } from "@/lib/ratelimit";
 import { isProActive } from "@/lib/plans";
+import {
+  callGemini,
+  isNanoBananaModel,
+  GeminiQuotaError,
+  GeminiSafetyError,
+} from "@/lib/gemini-image";
 
 // Vercel Hobby plan caps at 300s. Pollinations image gen can take 30s+.
 export const maxDuration = 300;
@@ -133,10 +148,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ---- Credit / quota gate ----
-  let charged: { type: "user"; userId: string } | { type: "ip"; ip: string };
+  const useNanoBanana = isNanoBananaModel(modelId);
+  const generateCost = useNanoBanana ? COSTS.nanoBanana : COSTS.generate;
+  let charged: { type: "user"; userId: string; cost: number } | { type: "ip"; ip: string };
 
   if (session?.user) {
-    const result = await deductCredits(session.user.id, COSTS.generate, "generate", {
+    const result = await deductCredits(session.user.id, generateCost, "generate", {
       prompt: prompt.slice(0, 200),
       provider,
       modelId,
@@ -148,7 +165,7 @@ export async function POST(req: NextRequest) {
         { status: 402 }
       );
     }
-    charged = { type: "user", userId: session.user.id };
+    charged = { type: "user", userId: session.user.id, cost: generateCost };
   } else {
     const used = await incrementIpUsage(ip);
     if ("error" in used) {
@@ -161,6 +178,21 @@ export async function POST(req: NextRequest) {
     charged = { type: "ip", ip };
   }
 
+  // ---- Nano Banana global daily cap (50 RPD on AI Studio free tier) ----
+  if (useNanoBanana) {
+    const q = await incrementGlobalDailyCounter(NANO_BANANA_GLOBAL_KEY, NANO_BANANA_DAILY_CAP);
+    if ("error" in q) {
+      if (charged.type === "user") {
+        await refundCredits(charged.userId, charged.cost, "nano_banana_quota_refund", { provider }).catch(() => {});
+      }
+      await cc.release();
+      return NextResponse.json(
+        { error: "nano_banana_quota_exhausted", provider },
+        { status: 429, headers: { "Retry-After": "3600" } }
+      );
+    }
+  }
+
   try {
     const startstamp = performance.now();
     const seed = Math.floor(Math.random() * 1_000_000);
@@ -171,7 +203,9 @@ export async function POST(req: NextRequest) {
     const isPro = isProActive(proExpiresAt);
 
     const generatePromise = (async () => {
-      const raw = await callPollinations(prompt, modelId, seed);
+      const raw = useNanoBanana
+        ? await callGemini(prompt)
+        : await callPollinations(prompt, modelId, seed);
       let final: Buffer;
       if (isPro) {
         final = raw;
@@ -200,7 +234,24 @@ export async function POST(req: NextRequest) {
       error
     );
     if (charged.type === "user") {
-      await refundCredits(charged.userId, COSTS.generate, "generate_refund", { requestId, provider }).catch(() => {});
+      const refundReason = error instanceof GeminiQuotaError
+        ? "nano_banana_quota_refund"
+        : error instanceof GeminiSafetyError
+          ? "nano_banana_safety_refund"
+          : "generate_refund";
+      await refundCredits(charged.userId, charged.cost, refundReason, { requestId, provider }).catch(() => {});
+    }
+    if (error instanceof GeminiQuotaError) {
+      return NextResponse.json(
+        { error: "nano_banana_quota_exhausted", provider },
+        { status: 429, headers: { "Retry-After": "3600" } }
+      );
+    }
+    if (error instanceof GeminiSafetyError) {
+      return NextResponse.json(
+        { error: "nano_banana_safety_blocked", provider },
+        { status: 400 }
+      );
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error", provider },

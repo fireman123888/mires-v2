@@ -90,7 +90,7 @@ export function ModelSelect({
             </div>
             <div className="flex flex-col w-full">
               <Link
-                className="hover:opacity-80"
+                className="hover:opacity-80 flex items-center gap-1.5"
                 href={
                   "https://sdk.vercel.ai/providers/ai-sdk-providers/" +
                   PROVIDER_LINKS[providerKey]
@@ -98,6 +98,14 @@ export function ModelSelect({
                 target="_blank"
               >
                 <h3 className="font-semibold text-lg">{label}</h3>
+                {value === "nano-banana-2" && (
+                  <span
+                    className="px-1.5 py-0.5 text-[9px] rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold uppercase tracking-wide whitespace-nowrap"
+                    title="Beta · 50 requests/day shared quota"
+                  >
+                    Beta · 限量
+                  </span>
+                )}
               </Link>
               <div className="flex justify-between items-center w-full">
                 <Select

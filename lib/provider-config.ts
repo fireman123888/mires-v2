@@ -4,6 +4,9 @@
 // Pollinations model preset under the hood. See app/api/generate-images/route.ts.
 
 export type ProviderKey = "replicate" | "vertex" | "openai" | "fireworks";
+// "performance" → Free Unlimited tier (all Pollinations, no credits)
+// "quality"     → Premium tier (Nano Banana 2 in vertex slot, costs credits)
+// Names kept for backwards compat with existing components.
 export type ModelMode = "performance" | "quality";
 
 export const PROVIDERS: Record<
@@ -22,10 +25,10 @@ export const PROVIDERS: Record<
     models: ["flux", "flux-pro"],
   },
   vertex: {
-    displayName: "写实",
+    displayName: "🍌 Nano Banana 2",
     iconPath: "/provider-icons/vertex.svg",
-    color: "from-blue-500 to-purple-500",
-    models: ["flux-realism"],
+    color: "from-amber-400 to-yellow-500",
+    models: ["nano-banana-2", "flux-realism"],
   },
   openai: {
     displayName: "动漫",
@@ -42,15 +45,20 @@ export const PROVIDERS: Record<
 };
 
 export const MODEL_CONFIGS: Record<ModelMode, Record<ProviderKey, string>> = {
+  // Free Unlimited: all 4 panels go through Pollinations (zero API cost,
+  // no daily cap, no credit deduction beyond the standard 4-credit charge
+  // per generation that matches anonymous-IP free tier).
   performance: {
     replicate: "flux",
     vertex: "flux-realism",
     openai: "flux-anime",
     fireworks: "turbo",
   },
+  // Premium: vertex slot promoted to Nano Banana 2 (12 credits, gated by
+  // global 45/day cap). Other 3 stay on Pollinations Pro variants.
   quality: {
     replicate: "flux-pro",
-    vertex: "flux-realism",
+    vertex: "nano-banana-2",
     openai: "flux-anime",
     fireworks: "flux",
   },
