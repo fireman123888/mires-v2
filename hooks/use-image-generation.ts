@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { ImageError, ImageResult, ProviderTiming } from "@/lib/image-types";
 import { initializeProviderRecord, ProviderKey } from "@/lib/provider-config";
+import { AspectRatio } from "@/lib/api-types";
+
+export interface GenerateOptions {
+  aspectRatio?: AspectRatio;
+  negativePrompt?: string;
+}
 
 interface UseImageGenerationReturn {
   images: ImageResult[];
@@ -12,6 +18,7 @@ interface UseImageGenerationReturn {
     prompt: string,
     providers: ProviderKey[],
     providerToModel: Record<ProviderKey, string>,
+    options?: GenerateOptions,
   ) => Promise<void>;
   resetState: () => void;
   activePrompt: string;
@@ -39,6 +46,7 @@ export function useImageGeneration(): UseImageGenerationReturn {
     prompt: string,
     providers: ProviderKey[],
     providerToModel: Record<ProviderKey, string>,
+    options?: GenerateOptions,
   ) => {
     setActivePrompt(prompt);
     try {
@@ -75,6 +83,8 @@ export function useImageGeneration(): UseImageGenerationReturn {
             prompt,
             provider,
             modelId,
+            aspectRatio: options?.aspectRatio,
+            negativePrompt: options?.negativePrompt,
           };
 
           const response = await fetch("/api/generate-images", {

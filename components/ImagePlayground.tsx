@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
-import { PromptInput } from "@/components/PromptInput";
+import { PromptInput, SubmitPayload } from "@/components/PromptInput";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
 import { HeroStats } from "@/components/HeroStats";
 import {
@@ -76,10 +76,13 @@ export function ImagePlayground({
     fireworks: selectedModels.fireworks,
   };
 
-  const handlePromptSubmit = (newPrompt: string) => {
+  const handlePromptSubmit = (payload: SubmitPayload) => {
     const activeProviders = PROVIDER_ORDER.filter((p) => enabledProviders[p]);
     if (activeProviders.length > 0) {
-      startGeneration(newPrompt, activeProviders, providerToModel);
+      startGeneration(payload.prompt, activeProviders, providerToModel, {
+        aspectRatio: payload.aspectRatio,
+        negativePrompt: payload.negativePrompt,
+      });
     }
     setShowProviders(false);
   };

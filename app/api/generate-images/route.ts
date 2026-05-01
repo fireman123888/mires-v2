@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { ProviderKey } from "@/lib/provider-config";
-import { GenerateImageRequest } from "@/lib/api-types";
+import { ASPECT_DIMS, AspectRatio, GenerateImageRequest } from "@/lib/api-types";
 import { auth } from "@/lib/auth";
 import { headers as nextHeaders } from "next/headers";
 import {
@@ -31,6 +31,11 @@ const POLLINATIONS_BASE = (process.env.POLLINATIONS_BASE_URL || "https://image.p
 const DEFAULT_WIDTH = 1024;
 const DEFAULT_HEIGHT = 1024;
 
+function dimsFor(aspectRatio?: AspectRatio): { width: number; height: number } {
+  if (!aspectRatio) return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+  return ASPECT_DIMS[aspectRatio] ?? { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+}
+
 const withTimeout = <T>(promise: Promise<T>, timeoutMillis: number): Promise<T> => {
   return Promise.race([
     promise,
@@ -40,10 +45,16 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMillis: number): Promise<T> 
   ]);
 };
 
-async function callPollinations(prompt: string, modelId: string, seed: number): Promise<Buffer> {
+async function callPollinations(
+  prompt: string,
+  modelId: string,
+  seed: number,
+  width: number,
+  height: number
+): Promise<Buffer> {
   const url = new URL(`${POLLINATIONS_BASE}/prompt/${encodeURIComponent(prompt)}`);
-  url.searchParams.set("width", String(DEFAULT_WIDTH));
-  url.searchParams.set("height", String(DEFAULT_HEIGHT));
+  url.searchParams.set("width", String(width));
+  url.searchParams.set("height", String(height));
   url.searchParams.set("model", modelId);
   url.searchParams.set("nologo", "true");
   url.searchParams.set("private", "true");
@@ -116,11 +127,21 @@ async function addWatermark(input: Buffer): Promise<Buffer> {
 
 export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
-  const { prompt, provider, modelId } = (await req.json()) as GenerateImageRequest;
+  const { prompt: rawPrompt, provider, modelId, aspectRatio, negativePrompt } =
+    (await req.json()) as GenerateImageRequest;
 
-  if (!prompt || !provider || !modelId) {
+  if (!rawPrompt || !provider || !modelId) {
     return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
   }
+
+  // Negative prompt is appended as a natural-language directive — works
+  // for both Pollinations (no native param support across all models) and
+  // Gemini (which understands "avoid X" instructions in the main prompt).
+  const prompt =
+    negativePrompt && negativePrompt.trim().length > 0
+      ? `${rawPrompt.trim()}. Avoid: ${negativePrompt.trim()}`
+      : rawPrompt.trim();
+  const dims = dimsFor(aspectRatio);
 
   const ip = getClientIp(req);
   const session = await auth.api.getSession({ headers: await nextHeaders() });
@@ -205,7 +226,7 @@ export async function POST(req: NextRequest) {
     const generatePromise = (async () => {
       const raw = useNanoBanana
         ? await callGemini(prompt)
-        : await callPollinations(prompt, modelId, seed);
+        : await callPollinations(prompt, modelId, seed, dims.width, dims.height);
       let final: Buffer;
       if (isPro) {
         final = raw;
