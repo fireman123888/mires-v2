@@ -281,7 +281,7 @@ export function PromptInput({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading || !input.trim()}
-            className="relative px-5 sm:px-6 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 text-black text-sm font-bold shadow-[0_0_15px_hsl(45_100%_60%/0.3)] hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            className="relative px-5 sm:px-6 py-2 rounded-lg bg-gradient-to-r from-[hsl(178_92%_56%)] via-[hsl(290_70%_60%)] to-[hsl(347_99%_58%)] text-white text-sm font-bold shadow-[0_0_20px_-5px_hsl(347_99%_58%/0.6),0_0_20px_-5px_hsl(178_92%_56%/0.5)] hover:opacity-95 hover:shadow-[0_0_24px_-3px_hsl(347_99%_58%/0.7),0_0_24px_-3px_hsl(178_92%_56%/0.6)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <span className="flex items-center gap-1.5">
               {isLoading ? (
@@ -293,7 +293,7 @@ export function PromptInput({
                 t("prompt.generate")
               )}
             </span>
-            <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
               {creditCost}
             </span>
           </button>

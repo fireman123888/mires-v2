@@ -14,6 +14,7 @@ type Messages = Record<string, string>;
 
 const zh: Messages = {
   // Header / nav
+  "nav.home": "首页",
   "nav.editor": "AI 图像编辑器",
   "nav.video": "AI 视频生成器",
   "nav.pricing": "定价",
@@ -474,6 +475,7 @@ const zh: Messages = {
 };
 
 const en: Messages = {
+  "nav.home": "Home",
   "nav.editor": "AI Image Editor",
   "nav.video": "AI Video Generator",
   "nav.pricing": "Pricing",

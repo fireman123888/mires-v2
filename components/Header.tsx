@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Home, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/I18nProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -30,6 +30,7 @@ export const Header = () => {
   const { t } = useT();
 
   const NAV_ITEMS = [
+    { href: "/", label: t("nav.home"), icon: Home },
     { href: "/editor", label: t("nav.editor") },
     { href: "/video", label: t("nav.video") },
     { href: "/pricing", label: t("nav.pricing") },
@@ -50,17 +51,19 @@ export const Header = () => {
         <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
                   active
                     ? "text-foreground bg-secondary"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
+                {Icon && <Icon className="w-3.5 h-3.5" />}
                 {item.label}
               </Link>
             );
@@ -89,18 +92,20 @@ export const Header = () => {
         <nav className="md:hidden mt-3 p-2 rounded-lg bg-card border border-border flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   active
                     ? "text-foreground bg-secondary"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
+                {Icon && <Icon className="w-4 h-4" />}
                 {item.label}
               </Link>
             );
