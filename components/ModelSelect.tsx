@@ -101,9 +101,9 @@ export function ModelSelect({
                 {value === "nano-banana-2" && (
                   <span
                     className="px-1.5 py-0.5 text-[9px] rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold uppercase tracking-wide whitespace-nowrap"
-                    title="Beta · 50 requests/day shared quota"
+                    title="Powered by Google Gemini 3 Pro Image"
                   >
-                    Beta · 限量
+                    NEW
                   </span>
                 )}
               </Link>
