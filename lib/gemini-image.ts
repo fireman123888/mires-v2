@@ -1,8 +1,8 @@
 // Google AI Studio (Gemini 3 Pro Image / Nano Banana 2) adapter.
 //
-// Free-tier specs (2026-Q1, AI Studio):
+// Free-tier specs (2026 mid-year, AI Studio):
 //   - 10 requests / minute
-//   - 50 requests / day per API key
+//   - 500 requests / day per API key
 //   - data may be used for training (free tier default)
 //   - hard 429 on exhaustion — never silently bills
 //

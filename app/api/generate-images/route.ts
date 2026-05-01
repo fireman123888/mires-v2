@@ -13,6 +13,8 @@ import {
   incrementGlobalDailyCounter,
   NANO_BANANA_DAILY_CAP,
   NANO_BANANA_GLOBAL_KEY,
+  CLOUDFLARE_DAILY_CAP,
+  CLOUDFLARE_GLOBAL_KEY,
 } from "@/lib/credits";
 import { acquireConcurrency, getIpRateLimit, getUserRateLimit, retryAfterSeconds } from "@/lib/ratelimit";
 import { isProActive } from "@/lib/plans";
@@ -22,6 +24,11 @@ import {
   GeminiQuotaError,
   GeminiSafetyError,
 } from "@/lib/gemini-image";
+import {
+  callCloudflare,
+  isCloudflareModel,
+  CloudflareQuotaError,
+} from "@/lib/cloudflare-image";
 
 // Vercel Hobby plan caps at 300s. Pollinations image gen can take 30s+.
 export const maxDuration = 300;
@@ -199,7 +206,7 @@ export async function POST(req: NextRequest) {
     charged = { type: "ip", ip };
   }
 
-  // ---- Nano Banana global daily cap (50 RPD on AI Studio free tier) ----
+  // ---- Nano Banana global daily cap (500 RPD on AI Studio free tier) ----
   if (useNanoBanana) {
     const q = await incrementGlobalDailyCounter(NANO_BANANA_GLOBAL_KEY, NANO_BANANA_DAILY_CAP);
     if ("error" in q) {
@@ -214,6 +221,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ---- Cloudflare Workers AI global daily cap (10K Neurons/day free) ----
+  // Soft cap: when this counter trips we silently degrade to Pollinations
+  // for the rest of the day rather than failing the panel. The actual
+  // routing decision happens in the generate block below.
+  let cloudflareAvailable = isCloudflareModel(modelId);
+  if (cloudflareAvailable) {
+    const q = await incrementGlobalDailyCounter(CLOUDFLARE_GLOBAL_KEY, CLOUDFLARE_DAILY_CAP);
+    if ("error" in q) {
+      cloudflareAvailable = false; // → falls through to Pollinations below
+    }
+  }
+
   try {
     const startstamp = performance.now();
     const seed = Math.floor(Math.random() * 1_000_000);
@@ -224,9 +243,27 @@ export async function POST(req: NextRequest) {
     const isPro = isProActive(proExpiresAt);
 
     const generatePromise = (async () => {
-      const raw = useNanoBanana
-        ? await callGemini(prompt)
-        : await callPollinations(prompt, modelId, seed, dims.width, dims.height);
+      let raw: Buffer;
+      if (useNanoBanana) {
+        raw = await callGemini(prompt);
+      } else if (cloudflareAvailable) {
+        try {
+          raw = await callCloudflare(prompt, modelId, {
+            width: dims.width,
+            height: dims.height,
+          });
+        } catch (cfErr) {
+          if (cfErr instanceof CloudflareQuotaError) {
+            // Mid-request quota exhaustion → graceful fallback
+            console.warn(`[generate-images] CF quota exhausted, falling back to Pollinations for requestId=${requestId}`);
+            raw = await callPollinations(prompt, "flux", seed, dims.width, dims.height);
+          } else {
+            throw cfErr;
+          }
+        }
+      } else {
+        raw = await callPollinations(prompt, modelId, seed, dims.width, dims.height);
+      }
       let final: Buffer;
       if (isPro) {
         final = raw;

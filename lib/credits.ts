@@ -10,10 +10,19 @@ export const COSTS = {
 };
 
 export const ANONYMOUS_DAILY_LIMIT = 5;
-// Global daily cap for the AI Studio free tier (50 RPD on gemini-3-pro-image-preview).
-// Counted across the whole site, not per-IP. Cap leaves 5-call headroom for retries.
-export const NANO_BANANA_DAILY_CAP = 45;
+// Global daily cap for the AI Studio free tier. Per Google's 2026 free
+// tier docs, gemini-3-pro-image-preview now allows up to 500 RPD per
+// API key. Cap leaves 50 calls of headroom (RPM bursts, retries).
+// Counted across the whole site, not per-IP.
+export const NANO_BANANA_DAILY_CAP = 450;
 export const NANO_BANANA_GLOBAL_KEY = "__nano_banana_global__";
+
+// Global daily cap for Cloudflare Workers AI free tier. Free plan
+// allocates 10,000 Neurons/day. Flux 1 Schnell is ~100 neurons/image,
+// so cap at 90 generations/day site-wide leaves headroom for other
+// CF AI calls (none currently, but future-proof).
+export const CLOUDFLARE_DAILY_CAP = 90;
+export const CLOUDFLARE_GLOBAL_KEY = "__cloudflare_global__";
 export const DAILY_REFRESH_AMOUNT = 20;
 export const DAILY_REFRESH_CAP = 200; // don't refill if balance already >= cap
 

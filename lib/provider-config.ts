@@ -19,10 +19,10 @@ export const PROVIDERS: Record<
   }
 > = {
   replicate: {
-    displayName: "Flux 标准",
+    displayName: "Flux Schnell HD",
     iconPath: "/provider-icons/replicate.svg",
     color: "from-cyan-400 to-blue-500",
-    models: ["flux", "flux-pro"],
+    models: ["flux-schnell-cf", "flux", "flux-pro"],
   },
   vertex: {
     displayName: "🍌 Nano Banana 2",
@@ -45,19 +45,19 @@ export const PROVIDERS: Record<
 };
 
 export const MODEL_CONFIGS: Record<ModelMode, Record<ProviderKey, string>> = {
-  // Free Unlimited: all 4 panels go through Pollinations (zero API cost,
-  // no daily cap, no credit deduction beyond the standard 4-credit charge
-  // per generation that matches anonymous-IP free tier).
+  // Free Unlimited: replicate slot uses Cloudflare Workers AI Flux 1
+  // Schnell (~100 imgs/day cap, free), vertex falls back to Pollinations
+  // realism, others stay on Pollinations free.
   performance: {
-    replicate: "flux",
+    replicate: "flux-schnell-cf",
     vertex: "flux-realism",
     openai: "flux-anime",
     fireworks: "turbo",
   },
-  // Premium: vertex slot promoted to Nano Banana 2 (12 credits, gated by
-  // global 45/day cap). Other 3 stay on Pollinations Pro variants.
+  // Premium: vertex promoted to Nano Banana 2 (12 credits, 450 RPD cap).
+  // replicate stays on CF Flux Schnell HD.
   quality: {
-    replicate: "flux-pro",
+    replicate: "flux-schnell-cf",
     vertex: "nano-banana-2",
     openai: "flux-anime",
     fireworks: "flux",
