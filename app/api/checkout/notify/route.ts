@@ -2,86 +2,77 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { paymentOrder, user, creditTransaction } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { verifyXunHuPay } from "@/lib/xunhupay";
+import { verifyYipay } from "@/lib/yipay";
 import { randomUUID } from "crypto";
 
 export const maxDuration = 30;
 
 /**
- * XunHuPay async notify handler. Returns literal "success" on accept.
+ * 易支付 async notify handler. Reply literal "success" or platform retries.
  *
- * Idempotent: if the same trade_order_id is paid twice we don't double-grant
- * credits — DB transaction with status check prevents that.
+ * Notify is GET (per spec). Idempotent via SQL `WHERE status='pending'`
+ * predicate so concurrent retries don't double-grant credits.
  */
-export async function POST(req: NextRequest) {
-  const appsecret = process.env.XUNHUPAY_APPSECRET;
-  if (!appsecret) return new Response("not_configured", { status: 503 });
+export async function GET(req: NextRequest) {
+  const publicKey = process.env.YIPAY_PUBLIC_KEY;
+  if (!publicKey) return new Response("not_configured", { status: 503 });
 
-  // XunHuPay sends form-encoded body
-  const text = await req.text();
-  const params = Object.fromEntries(new URLSearchParams(text).entries());
+  const params = Object.fromEntries(req.nextUrl.searchParams.entries());
 
-  // 1. Verify signature
-  if (!verifyXunHuPay(params, appsecret)) {
-    console.error("[notify] invalid hash:", params);
+  if (!verifyYipay(params, publicKey)) {
+    console.error("[notify] invalid sign:", { ...params, sign: "***" });
     return new Response("invalid_signature", { status: 400 });
   }
 
-  // 2. Only act on "OD" (paid) — ignore other statuses
-  if (params.status !== "OD") {
-    console.log(`[notify] non-paid status=${params.status} order=${params.trade_order_id}`);
+  if (params.trade_status !== "TRADE_SUCCESS") {
+    console.log(
+      `[notify] non-success trade_status=${params.trade_status} order=${params.out_trade_no}`
+    );
     return new Response("success");
   }
 
-  const tradeOrderId = params.trade_order_id;
-  if (!tradeOrderId) {
-    return new Response("missing_order_id", { status: 400 });
-  }
+  const outTradeNo = params.out_trade_no;
+  if (!outTradeNo) return new Response("missing_order_id", { status: 400 });
 
-  // 3. Look up the order
   const orderRows = await db
     .select()
     .from(paymentOrder)
-    .where(eq(paymentOrder.id, tradeOrderId))
+    .where(eq(paymentOrder.id, outTradeNo))
     .limit(1);
   const order = orderRows[0];
   if (!order) {
-    console.error(`[notify] unknown order: ${tradeOrderId}`);
-    // Reply success to stop retries (we won't be able to recover this anyway)
-    return new Response("success");
+    console.error(`[notify] unknown order: ${outTradeNo}`);
+    return new Response("success"); // ack to stop retries we can't recover
   }
-
-  // 4. Idempotency: only grant if currently pending
   if (order.status === "paid") {
-    console.log(`[notify] already paid: ${tradeOrderId}`);
+    console.log(`[notify] already paid: ${outTradeNo}`);
     return new Response("success");
   }
 
-  // 5. Mark paid + grant credits + log transaction (atomic-ish)
   const updated = await db
     .update(paymentOrder)
     .set({
       status: "paid",
       paidAt: new Date(),
-      providerTxnId: params.transaction_id ?? null,
-      providerOrderId: params.open_order_id ?? null,
+      providerTxnId: params.api_trade_no ?? null, // upstream wechat/alipay txn id
+      providerOrderId: params.trade_no ?? null, // platform internal order id
       rawNotify: JSON.stringify(params),
     })
     .where(
-      // race-safe: only flip if still pending
-      sql`${paymentOrder.id} = ${tradeOrderId} AND ${paymentOrder.status} = 'pending'`
+      sql`${paymentOrder.id} = ${outTradeNo} AND ${paymentOrder.status} = 'pending'`
     )
-    .returning({ userId: paymentOrder.userId, creditAmount: paymentOrder.creditAmount });
+    .returning({
+      userId: paymentOrder.userId,
+      creditAmount: paymentOrder.creditAmount,
+    });
 
   if (updated.length === 0) {
-    // Already moved by a concurrent notify — just ack
-    console.log(`[notify] race lost on ${tradeOrderId}, status was already changed`);
+    console.log(`[notify] race lost on ${outTradeNo}`);
     return new Response("success");
   }
 
   const { userId, creditAmount } = updated[0];
 
-  // 6. Add credits to user
   const balanceRows = await db
     .update(user)
     .set({
@@ -100,14 +91,17 @@ export async function POST(req: NextRequest) {
     balanceAfter: newBalance,
     reason: "purchase",
     metadata: JSON.stringify({
-      orderId: tradeOrderId,
+      orderId: outTradeNo,
       packId: order.packId,
-      provider: "xunhupay",
-      providerTxnId: params.transaction_id,
+      provider: "yipay",
+      apiTradeNo: params.api_trade_no,
+      tradeNo: params.trade_no,
     }),
   });
 
-  console.log(`[notify] granted ${creditAmount} credits to ${userId} (order ${tradeOrderId}). new balance: ${newBalance}`);
+  console.log(
+    `[notify] +${creditAmount} credits to ${userId} (order ${outTradeNo}). new balance: ${newBalance}`
+  );
 
   return new Response("success");
 }

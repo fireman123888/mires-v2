@@ -4,7 +4,7 @@ import { headers as nextHeaders } from "next/headers";
 import { db } from "@/lib/db";
 import { paymentOrder } from "@/lib/db/schema";
 import { getPack } from "@/lib/credit-packs";
-import { createXunHuPayment } from "@/lib/xunhupay";
+import { buildYipaySubmitUrl } from "@/lib/yipay";
 import { randomUUID } from "crypto";
 
 export const maxDuration = 30;
@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_pack" }, { status: 400 });
   }
 
-  const appid = process.env.XUNHUPAY_APPID;
-  const appsecret = process.env.XUNHUPAY_APPSECRET;
-  if (!appid || !appsecret) {
+  const gateway = process.env.YIPAY_GATEWAY;
+  const pid = process.env.YIPAY_PID;
+  const privateKey = process.env.YIPAY_PRIVATE_KEY;
+  if (!gateway || !pid || !privateKey) {
     return NextResponse.json({ error: "payment_not_configured" }, { status: 503 });
   }
 
-  // Create order in DB first; status=pending
   const tradeOrderId = `mires_${Date.now()}_${randomUUID().slice(0, 8)}`.slice(0, 32);
   await db.insert(paymentOrder).values({
     id: tradeOrderId,
@@ -43,33 +43,25 @@ export async function POST(req: NextRequest) {
     priceCents: pack.priceCents,
     currency: "CNY",
     status: "pending",
-    provider: "xunhupay",
+    provider: "yipay",
   });
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mires.top";
 
-  const result = await createXunHuPayment({
-    appid,
-    appsecret,
-    tradeOrderId,
-    totalFeeCny: pack.priceCents / 100,
-    title: `Mires ${pack.credits} 积分包`,
+  const checkoutUrl = buildYipaySubmitUrl({
+    gateway,
+    pid,
+    privateKeyPem: privateKey,
+    outTradeNo: tradeOrderId,
     notifyUrl: `${baseUrl}/api/checkout/notify`,
     returnUrl: `${baseUrl}/payment/success?order=${tradeOrderId}`,
-    attach: `userId=${session.user.id};packId=${pack.id}`,
+    name: `Mires ${pack.credits} 积分包`,
+    money: pack.priceCents / 100,
+    param: `userId=${session.user.id};packId=${pack.id}`,
   });
-
-  if (!result.ok) {
-    console.error("[checkout/create] XunHuPay error:", result.errmsg, result.raw);
-    return NextResponse.json(
-      { error: "provider_error", detail: result.errmsg },
-      { status: 502 }
-    );
-  }
 
   return NextResponse.json({
     orderId: tradeOrderId,
-    checkoutUrl: result.url, // mobile-friendly
-    qrCodeUrl: result.qrUrl, // PC QR code
+    checkoutUrl,
   });
 }

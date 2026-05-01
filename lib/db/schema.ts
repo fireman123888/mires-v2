@@ -68,20 +68,20 @@ export const creditTransaction = pgTable(
   })
 );
 
-// Track payment orders (XunHuPay-backed credit pack purchases).
+// Track payment orders for credit pack purchases.
 export const paymentOrder = pgTable(
   "payment_order",
   {
-    id: text("id").primaryKey(), // our trade_order_id (UUID-ish, ≤32 chars)
+    id: text("id").primaryKey(), // our out_trade_no (UUID-ish, ≤32 chars)
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     packId: text("pack_id").notNull(), // 'small' | 'medium' | 'large'
     creditAmount: integer("credit_amount").notNull(), // credits to grant on success
     priceCents: integer("price_cents").notNull(), // store as cents to avoid float
     currency: text("currency").notNull().default("CNY"),
     status: text("status").notNull().default("pending"), // pending | paid | failed | refunded
-    provider: text("provider").notNull().default("xunhupay"),
-    providerTxnId: text("provider_txn_id"), // transaction_id from notify
-    providerOrderId: text("provider_order_id"), // open_order_id from notify
+    provider: text("provider").notNull().default("yipay"),
+    providerTxnId: text("provider_txn_id"), // upstream wechat/alipay txn id
+    providerOrderId: text("provider_order_id"), // platform internal trade_no
     createdAt: timestamp("created_at").notNull().defaultNow(),
     paidAt: timestamp("paid_at"),
     rawNotify: text("raw_notify"), // JSON of last notify payload for debugging
