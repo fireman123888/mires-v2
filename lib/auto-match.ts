@@ -104,32 +104,3 @@ export async function tryAutoMatch(
     newBalance: result.newBalance,
   };
 }
-
-/**
- * Best-effort parser for Alipay 邮件提醒 plain-text body.
- * Returns null if amount can't be confidently extracted.
- */
-export function parseAlipayEmailBody(
-  body: string,
-  subject = ""
-): { amount: number; payerName?: string } | null {
-  const text = `${subject}\n${body}`;
-
-  // Try labelled patterns first (more precise), fall back to bare ¥X.XX.
-  const amountMatch =
-    text.match(/收款金额[：:]\s*¥?\s*(\d+(?:\.\d{1,2})?)/) ||
-    text.match(/金额[：:]\s*¥?\s*(\d+(?:\.\d{1,2})?)/) ||
-    text.match(/¥\s*(\d+(?:\.\d{1,2})?)/);
-  if (!amountMatch) return null;
-  const amount = parseFloat(amountMatch[1]);
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-
-  const payerMatch =
-    text.match(/付款方[：:]\s*([^\s\n<]+)/) ||
-    text.match(/付款人[：:]\s*([^\s\n<]+)/);
-
-  return {
-    amount,
-    payerName: payerMatch?.[1],
-  };
-}
