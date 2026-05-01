@@ -4,7 +4,7 @@ import { eq, sql, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export const COSTS = {
-  generate: 10,
+  generate: 4,
   upscale: 20,
 };
 
