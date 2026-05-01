@@ -16,8 +16,9 @@ export const maxDuration = 30;
  *   { amount: number, source: "alipay"|"wechat", payerName?: string,
  *     externalId?: string, receivedAt?: string }
  *
- * Auth: HMAC-SHA256 of the raw body using AUTO_MATCH_SECRET env var,
- * passed as X-Signature header (lowercase hex).
+ * Auth (either works):
+ *   - Easy: `Authorization: Bearer <AUTO_MATCH_SECRET>` (IFTTT/Zapier-friendly)
+ *   - Strict: `X-Signature: <HMAC-SHA256(body, secret) lowercase hex>`
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.AUTO_MATCH_SECRET;
@@ -26,19 +27,29 @@ export async function POST(req: NextRequest) {
   }
 
   const rawBody = await req.text();
+  const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   const signature = req.headers.get("x-signature") || "";
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
 
-  let sigOk = false;
-  try {
-    const a = Buffer.from(signature, "hex");
-    const b = Buffer.from(expected, "hex");
-    sigOk = a.length === b.length && timingSafeEqual(a, b);
-  } catch {
-    sigOk = false;
+  let authOk = false;
+  if (bearer && bearer.length === secret.length) {
+    try {
+      authOk = timingSafeEqual(Buffer.from(bearer), Buffer.from(secret));
+    } catch {
+      authOk = false;
+    }
   }
-  if (!sigOk) {
-    return NextResponse.json({ error: "bad_signature" }, { status: 401 });
+  if (!authOk && signature) {
+    const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+    try {
+      const a = Buffer.from(signature, "hex");
+      const b = Buffer.from(expected, "hex");
+      authOk = a.length === b.length && timingSafeEqual(a, b);
+    } catch {
+      authOk = false;
+    }
+  }
+  if (!authOk) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   let payload: {
