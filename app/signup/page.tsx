@@ -19,7 +19,14 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || password.length < 8) return;
+    if (!email.trim()) {
+      setError(t("signup.emailRequired"));
+      return;
+    }
+    if (password.length < 8) {
+      setError(t("signup.passwordTooShort"));
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -132,7 +139,7 @@ export default function SignUpPage() {
 
               <button
                 type="submit"
-                disabled={submitting || !email.trim() || password.length < 8}
+                disabled={submitting}
                 className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting ? <Spinner className="w-4 h-4" /> : null}

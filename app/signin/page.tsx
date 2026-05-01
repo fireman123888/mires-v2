@@ -33,8 +33,14 @@ function SignInInner() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    if (mode === "password" && !password) return;
+    if (!email.trim()) {
+      setError(t("signin.emailRequired"));
+      return;
+    }
+    if (mode === "password" && !password) {
+      setError(t("signin.passwordRequired"));
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -168,7 +174,7 @@ function SignInInner() {
 
             <button
               type="submit"
-              disabled={submitting || !email.trim() || (mode === "password" && !password)}
+              disabled={submitting}
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting ? <Spinner className="w-4 h-4" /> : null}
